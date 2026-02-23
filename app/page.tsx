@@ -18,6 +18,4 @@ export default function Home() {
           <ScrabbleBoard />
         </section>
       </div>
-    </main>
-  );
-}
+    </main
