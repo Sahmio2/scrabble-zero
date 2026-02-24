@@ -5,6 +5,10 @@ import { GameLobby } from "@/app/components/GameLobby";
 import { GameRoom } from "@/app/components/GameRoom";
 import { ScrabbleBoard } from "@/app/components/ScrabbleBoard";
 import { Navigation } from "@/app/components/Navigation";
+import { TurnTimer } from "@/app/components/TurnTimer";
+import { GameChat } from "@/app/components/GameChat";
+import { ChallengeSystem } from "@/app/components/ChallengeSystem";
+import { useSocket } from "@/hooks/useSocket";
 import {
   generateRoomCode,
   initializeTileBag,
@@ -65,6 +69,21 @@ export default function GamePage() {
   const [players, setPlayers] = useState<Player[]>(mockPlayers);
   const [board, setBoard] = useState<(string | null)[][]>(initializeBoard());
   const [currentUserId] = useState("1"); // Mock current user ID
+  const [userName] = useState("You"); // Mock user name
+
+  // Socket integration
+  const {
+    socket,
+    connected,
+    players: socketPlayers,
+    currentTurn,
+    timeLeft,
+    gameStarted,
+    joinRoom,
+    startGame,
+    submitMove,
+    endTurn,
+  } = useSocket(currentRoom?.code);
 
   const handleCreateRoom = (
     mode: "classic" | "private" | "guest",
@@ -141,6 +160,11 @@ export default function GamePage() {
 
     setPlayers(updatedPlayers);
     setGameState("playing");
+
+    // Start game via socket
+    if (socket && currentRoom.code) {
+      startGame(currentRoom.code);
+    }
   };
 
   const handleLeaveRoom = () => {
@@ -240,7 +264,18 @@ export default function GamePage() {
             {/* Game Area */}
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Players Sidebar */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 space-y-6">
+                {/* Turn Timer */}
+                {currentRoom && (
+                  <TurnTimer
+                    roomId={currentRoom.code}
+                    currentPlayerId={currentUserId}
+                    players={players}
+                    currentTurn={currentTurn}
+                  />
+                )}
+
+                {/* Players List */}
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <h2 className="text-xl font-bold text-stone-900 mb-4">
                     Players
@@ -262,6 +297,11 @@ export default function GamePage() {
                               YOU
                             </span>
                           )}
+                          {index === currentTurn && (
+                            <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                              CURRENT
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-stone-600">
                           Score: {player.score}
@@ -273,6 +313,16 @@ export default function GamePage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Challenge System */}
+                {currentRoom && (
+                  <ChallengeSystem
+                    roomId={currentRoom.code}
+                    currentUserId={currentUserId}
+                    players={players}
+                    currentTurn={currentTurn}
+                  />
+                )}
               </div>
 
               {/* Game Board */}
@@ -306,6 +356,15 @@ export default function GamePage() {
             </div>
           </div>
         </main>
+
+        {/* Game Chat */}
+        {currentRoom && (
+          <GameChat
+            roomId={currentRoom.code}
+            currentUserId={currentUserId}
+            currentUserName={userName}
+          />
+        )}
       </>
     );
   }
