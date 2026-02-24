@@ -8,6 +8,9 @@ import { Navigation } from "@/app/components/Navigation";
 import { TurnTimer } from "@/app/components/TurnTimer";
 import { GameChat } from "@/app/components/GameChat";
 import { ChallengeSystem } from "@/app/components/ChallengeSystem";
+import { InteractiveBoard } from "@/app/components/InteractiveBoard";
+import { TileRack } from "@/app/components/TileRack";
+import { GameControls } from "@/app/components/GameControls";
 import { useSocket } from "@/hooks/useSocket";
 import {
   generateRoomCode,
@@ -71,6 +74,20 @@ export default function GamePage() {
   const [currentUserId] = useState("1"); // Mock current user ID
   const [userName] = useState("You"); // Mock user name
 
+  // Drag and drop state
+  const [placedTiles, setPlacedTiles] = useState<
+    Array<{
+      id: string;
+      letter: string;
+      value?: number;
+      row: number;
+      col: number;
+    }>
+  >([]);
+  const [rackTiles, setRackTiles] = useState<
+    Array<{ id: string; letter: string; value?: number }>
+  >([]);
+
   // Socket integration
   const {
     socket,
@@ -84,6 +101,72 @@ export default function GamePage() {
     submitMove,
     endTurn,
   } = useSocket(currentRoom?.code);
+
+  // Drag and drop handlers
+  const handleTilePlace = (tileId: string, row: number, col: number) => {
+    const tile = rackTiles.find((t) => t.id === tileId);
+    if (tile) {
+      // Remove from rack
+      setRackTiles((prev) => prev.filter((t) => t.id !== tileId));
+      // Add to board
+      setPlacedTiles((prev) => [...prev, { ...tile, row, col }]);
+    }
+  };
+
+  const handleTileRemove = (tileId: string) => {
+    const tile = placedTiles.find((t) => t.id === tileId);
+    if (tile) {
+      // Remove from board
+      setPlacedTiles((prev) => prev.filter((t) => t.id !== tileId));
+      // Add back to rack
+      setRackTiles((prev) => [
+        ...prev,
+        { id: tile.id, letter: tile.letter, value: tile.value },
+      ]);
+    }
+  };
+
+  const handleTileReorder = (oldIndex: number, newIndex: number) => {
+    setRackTiles((prev) => {
+      const result = Array.from(prev);
+      const [removed] = result.splice(oldIndex, 1);
+      result.splice(newIndex, 0, removed);
+      return result;
+    });
+  };
+
+  const handlePlayMove = () => {
+    setPlacedTiles([]);
+    // Move to next turn would be handled by socket
+  };
+
+  const handleRecallTiles = () => {
+    // Move all placed tiles back to rack
+    const tilesToRecall = [...placedTiles];
+    setPlacedTiles([]);
+    setRackTiles((prev) => [
+      ...prev,
+      ...tilesToRecall.map((tile) => ({
+        id: tile.id,
+        letter: tile.letter,
+        value: tile.value,
+      })),
+    ]);
+  };
+
+  const handlePassTurn = () => {
+    if (socket && currentRoom?.code) {
+      const nextPlayerIndex = (currentTurn + 1) % players.length;
+      endTurn(currentRoom.code, nextPlayerIndex);
+    }
+  };
+
+  const handleSwapTiles = () => {
+    // Implement tile swapping logic
+    console.log("Swap tiles not implemented yet");
+  };
+
+  const isCurrentPlayerTurn = players[currentTurn]?.id === currentUserId;
 
   const handleCreateRoom = (
     mode: "classic" | "private" | "guest",
@@ -160,6 +243,45 @@ export default function GamePage() {
 
     setPlayers(updatedPlayers);
     setGameState("playing");
+
+    // Initialize current player's rack with tile IDs and values
+    const currentPlayerTiles = playerRacks[`player-0`] || [];
+    const letterScores: Record<string, number> = {
+      A: 1,
+      E: 1,
+      I: 1,
+      O: 1,
+      U: 1,
+      L: 1,
+      N: 1,
+      R: 1,
+      S: 1,
+      T: 1,
+      D: 2,
+      G: 2,
+      B: 3,
+      C: 3,
+      M: 3,
+      P: 3,
+      F: 4,
+      H: 4,
+      V: 4,
+      W: 4,
+      Y: 4,
+      K: 5,
+      J: 8,
+      X: 8,
+      Q: 10,
+      Z: 10,
+    };
+
+    const rackTilesWithIds = currentPlayerTiles.map((letter, index) => ({
+      id: `tile-${index}`,
+      letter,
+      value: letterScores[letter] || 1,
+    }));
+
+    setRackTiles(rackTilesWithIds);
 
     // Start game via socket
     if (socket && currentRoom.code) {
@@ -326,32 +448,45 @@ export default function GamePage() {
               </div>
 
               {/* Game Board */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-6">
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <h2 className="text-xl font-bold text-stone-900 mb-4">
                     Game Board
                   </h2>
-                  <ScrabbleBoard />
 
-                  {/* Player Rack */}
-                  {currentPlayer && (
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold text-stone-900 mb-3">
-                        Your Tiles
-                      </h3>
-                      <div className="flex gap-2 justify-center">
-                        {currentPlayer.tiles.map((tile, index) => (
-                          <div
-                            key={index}
-                            className="w-12 h-12 bg-amber-100 border-2 border-amber-600 rounded-lg flex items-center justify-center font-bold text-amber-900"
-                          >
-                            {tile}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <InteractiveBoard
+                    boardTiles={placedTiles}
+                    rackTiles={rackTiles}
+                    onTilePlace={handleTilePlace}
+                    onTileRemove={handleTileRemove}
+                    onTileReorder={handleTileReorder}
+                    isCurrentPlayerTurn={isCurrentPlayerTurn}
+                  />
                 </div>
+
+                {/* Player Rack */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-lg font-semibold text-stone-900 mb-3">
+                    Your Tiles
+                  </h3>
+                  <TileRack
+                    tiles={rackTiles}
+                    onTileReorder={handleTileReorder}
+                  />
+                </div>
+
+                {/* Game Controls */}
+                <GameControls
+                  roomId={currentRoom?.code || ""}
+                  currentUserId={currentUserId}
+                  placedTiles={placedTiles}
+                  onPlayMove={handlePlayMove}
+                  onPassTurn={handlePassTurn}
+                  onSwapTiles={handleSwapTiles}
+                  onRecallTiles={handleRecallTiles}
+                  canPlayMove={placedTiles.length > 0 && isCurrentPlayerTurn}
+                  isCurrentPlayerTurn={isCurrentPlayerTurn}
+                />
               </div>
             </div>
           </div>
