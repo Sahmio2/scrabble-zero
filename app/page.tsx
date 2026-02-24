@@ -17,6 +17,15 @@ export default function Home() {
         <section className="w-full">
           <ScrabbleBoard />
         </section>
+
+        <section className="w-full">
+          <a
+            href="/game"
+            className="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Play Now
+          </a>
+        </section>
       </div>
     </main>
   );
