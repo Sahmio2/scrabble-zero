@@ -7,7 +7,7 @@ import { Navigation } from "@/app/components/Navigation";
 
 export default function PublicProfilePage() {
   const params = useParams();
-  const userId = params.userId as string;
+  const userId = params?.userId as string;
 
   return (
     <>
