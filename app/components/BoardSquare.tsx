@@ -69,16 +69,40 @@ export function BoardSquare({
     }
   };
 
+  const getBonusLabel = (bonusType: string) => {
+    switch (bonusType) {
+      case "double-word":
+        return "Double Word";
+      case "triple-word":
+        return "Triple Word";
+      case "double-letter":
+        return "Double Letter";
+      case "triple-letter":
+        return "Triple Letter";
+      case "center":
+        return "Center Star";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       className={`
-        w-12 h-12 border-2 rounded flex items-center justify-center
+        select-none touch-none min-w-10 min-h-10 lg:w-12 lg:h-12 border-2 rounded flex items-center justify-center
         transition-all duration-200 relative
         ${getBonusClass()}
         ${isOver && isDroppable ? "scale-105 shadow-lg" : ""}
         ${tile ? "border-amber-600" : ""}
       `}
+      aria-label={
+        tile
+          ? `Square ${row + 1}, ${col + 1} with tile ${tile.letter}`
+          : `Empty square ${row + 1}, ${col + 1}${bonus ? ` (${getBonusLabel(bonus)})` : ""}`
+      }
+      aria-dropeffect={isOver ? "move" : undefined}
+      role="gridcell"
     >
       {tile ? (
         <Tile
@@ -88,7 +112,9 @@ export function BoardSquare({
           isDraggable={true}
         />
       ) : (
-        <span className="text-xs font-semibold">{getBonusText()}</span>
+        <span className="text-[10px] sm:text-xs font-semibold">
+          {getBonusText()}
+        </span>
       )}
 
       {isOver && isDroppable && (

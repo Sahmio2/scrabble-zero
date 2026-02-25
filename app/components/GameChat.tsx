@@ -42,18 +42,29 @@ export function GameChat({
 
   return (
     <div
-      className={`fixed bottom-4 right-4 w-80 transition-all ${
-        isOpen ? "h-96" : "h-12"
-      } bg-white rounded-lg shadow-xl border border-stone-200`}
+      className={`fixed bottom-4 right-4 w-72 sm:w-80 transition-all ${
+        isOpen ? "h-80 sm:h-96" : "h-12"
+      } bg-white rounded-lg shadow-xl border border-stone-200 z-40`}
+      role="complementary"
+      aria-label="Game chat"
     >
       {/* Chat Header */}
       <div
         className="flex items-center justify-between p-3 bg-stone-100 rounded-t-lg cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
+        role="button"
+        aria-expanded={isOpen}
+        aria-controls="chat-messages"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            setIsOpen(!isOpen);
+          }
+        }}
       >
         <h3 className="font-semibold text-stone-900">Game Chat</h3>
         <div className="flex items-center gap-2">
-          {chatMessages.length > 0 && (
+          {chatMessages.length > 0 && !isOpen && (
             <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
               {chatMessages.length}
             </span>
@@ -63,6 +74,7 @@ export function GameChat({
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"

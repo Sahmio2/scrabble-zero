@@ -61,19 +61,22 @@ export function TileRack({
     <div
       ref={setNodeRef}
       className={`
-        bg-stone-800 rounded-xl p-4 min-h-20
+        bg-stone-800 rounded-xl p-3 sm:p-4 min-h-20
         flex items-center justify-center gap-2 flex-wrap
-        transition-all duration-200
+        transition-all duration-200 relative
         ${isOver ? "bg-stone-700 scale-105" : ""}
         ${className}
       `}
+      role="region"
+      aria-label="Tile rack - drag tiles here to return them"
+      aria-dropeffect={isOver ? "move" : undefined}
     >
       <SortableContext
         items={tiles.map((tile) => tile.id)}
         strategy={verticalListSortingStrategy}
       >
         {tiles.length === 0 ? (
-          <div className="text-stone-400 text-sm">
+          <div className="text-stone-400 text-sm text-center">
             Your tiles will appear here
           </div>
         ) : (

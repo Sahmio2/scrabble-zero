@@ -12,17 +12,18 @@ interface TileProps {
   className?: string;
 }
 
-export function Tile({ id, letter, value, isDraggable = true, className = "" }: TileProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id,
-    disabled: !isDraggable,
-  });
+export function Tile({
+  id,
+  letter,
+  value,
+  isDraggable = true,
+  className = "",
+}: TileProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id,
+      disabled: !isDraggable,
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -34,19 +35,23 @@ export function Tile({ id, letter, value, isDraggable = true, className = "" }: 
       ref={setNodeRef}
       style={style}
       className={`
-        w-12 h-12 bg-amber-100 border-2 border-amber-600 rounded-lg 
+        w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 border-2 border-amber-600 rounded-lg 
         flex items-center justify-center font-bold text-amber-900
         shadow-md hover:shadow-lg transition-shadow cursor-move
-        select-none touch-none
+        select-none touch-none min-w-10 min-h-10
         ${isDragging ? "scale-105 rotate-2" : ""}
         ${!isDraggable ? "cursor-default opacity-75" : ""}
         ${className}
       `}
       {...listeners}
       {...attributes}
+      role="button"
+      aria-label={`Tile ${letter}${value ? `, ${value} points` : ""}`}
+      aria-grabbed={isDragging}
+      tabIndex={isDraggable ? 0 : -1}
     >
       <div className="flex flex-col items-center">
-        <span className="text-lg font-bold">{letter}</span>
+        <span className="text-base sm:text-lg font-bold">{letter}</span>
         {value !== undefined && (
           <span className="text-xs text-amber-700">{value}</span>
         )}

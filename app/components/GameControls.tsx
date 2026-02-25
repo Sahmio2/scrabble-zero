@@ -154,13 +154,14 @@ export function GameControls({
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <button
           onClick={handlePlayMove}
           disabled={
             !isCurrentPlayerTurn || placedTiles.length === 0 || !canPlayMove
           }
-          className="bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
+          className="bg-green-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-h-[44px]"
+          aria-label="Play move"
         >
           Play Move
         </button>
@@ -168,7 +169,8 @@ export function GameControls({
         <button
           onClick={onRecallTiles}
           disabled={placedTiles.length === 0}
-          className="bg-amber-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-amber-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
+          className="bg-amber-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-amber-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 min-h-[44px]"
+          aria-label="Recall tiles to rack"
         >
           Recall Tiles
         </button>
@@ -176,7 +178,8 @@ export function GameControls({
         <button
           onClick={onSwapTiles}
           disabled={!isCurrentPlayerTurn}
-          className="bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
+          className="bg-blue-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]"
+          aria-label="Swap tiles"
         >
           Swap Tiles
         </button>
@@ -184,14 +187,15 @@ export function GameControls({
         <button
           onClick={onPassTurn}
           disabled={!isCurrentPlayerTurn}
-          className="bg-stone-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-stone-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
+          className="bg-stone-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-stone-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2 min-h-[44px]"
+          aria-label="Pass turn"
         >
           Pass Turn
         </button>
       </div>
 
-      {/* Instructions */}
-      <div className="text-xs text-stone-500 space-y-1">
+      {/* Instructions - hidden on small mobile, visible on larger screens */}
+      <div className="hidden sm:block text-xs text-stone-500 space-y-1">
         <p>• Drag tiles from your rack to the board</p>
         <p>• Drag tiles back to rack to recall</p>
         <p>• Reorder tiles in your rack</p>
