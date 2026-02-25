@@ -10,7 +10,12 @@ interface TurnTimerProps {
   currentTurn: number;
 }
 
-export function TurnTimer({ roomId, currentPlayerId, players, currentTurn }: TurnTimerProps) {
+export function TurnTimer({
+  roomId,
+  currentPlayerId,
+  players,
+  currentTurn,
+}: TurnTimerProps) {
   const { timeLeft, turnTimer } = useSocket(roomId);
   const isCurrentPlayerTurn = players[currentTurn]?.id === currentPlayerId;
   const currentPlayerName = players[currentTurn]?.name || "Unknown";
@@ -19,42 +24,52 @@ export function TurnTimer({ roomId, currentPlayerId, players, currentTurn }: Tur
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   // Determine timer color based on time left
   const getTimerColor = () => {
-    if (!isCurrentPlayerTurn) return "text-stone-600";
-    if (timeLeft <= 5) return "text-red-600 font-bold animate-pulse";
-    if (timeLeft <= 10) return "text-amber-600 font-semibold";
-    return "text-green-600";
+    if (!isCurrentPlayerTurn) return "text-stone-400";
+    if (timeLeft <= 30) return "text-[#dc2626] font-bold animate-pulse";
+    return "text-[#a06e2c] font-bold";
   };
 
   // Get background color for timer
   const getTimerBackground = () => {
-    if (!isCurrentPlayerTurn) return "bg-stone-100";
-    if (timeLeft <= 5) return "bg-red-50 border-red-200";
-    if (timeLeft <= 10) return "bg-amber-50 border-amber-200";
-    return "bg-green-50 border-green-200";
+    if (isCurrentPlayerTurn) return "bg-white border-[#c0883e]";
+    return "bg-stone-50 border-stone-200 opacity-80";
   };
 
   return (
-    <div className={`rounded-lg border-2 p-4 transition-all ${getTimerBackground()}`}>
+    <div
+      className={`rounded-lg border-2 p-4 transition-all shadow-md ${getTimerBackground()}`}
+    >
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-medium text-stone-700 mb-1">Current Turn</h3>
-          <p className="text-lg font-semibold text-stone-900">
-            {currentPlayerName}
-            {isCurrentPlayerTurn && (
-              <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">YOUR TURN</span>
-            )}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#145a32] border-2 border-[#2d8a54] flex items-center justify-center text-white font-serif font-bold shadow-inner">
+            {players[currentTurn]?.name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h3 className="text-[10px] uppercase tracking-wider font-bold text-stone-500 mb-0.5">
+              Current Turn
+            </h3>
+            <p className="text-lg font-serif font-bold text-stone-900 flex items-center gap-2">
+              {currentPlayerName}
+              {isCurrentPlayerTurn && (
+                <span className="text-[10px] bg-[#c0883e] text-white px-2 py-0.5 rounded font-sans font-bold uppercase tracking-tighter">
+                  YOUR TURN
+                </span>
+              )}
+            </p>
+          </div>
         </div>
-        
+
         <div className="text-right">
-          <div className="text-sm font-medium text-stone-700 mb-1">Time Remaining</div>
-          <div className={`text-2xl font-mono ${getTimerColor()}`}>
-            {formatTime(timeLeft)}
+          <div className="text-[10px] uppercase tracking-wider font-bold text-stone-500 mb-0.5">
+            Time Remaining
+          </div>
+          <div className={`text-2xl font-mono tabular-nums ${getTimerColor()}`}>
+            ⏱ {formatTime(timeLeft)}
           </div>
         </div>
       </div>
@@ -64,9 +79,11 @@ export function TurnTimer({ roomId, currentPlayerId, players, currentTurn }: Tur
         <div className="w-full bg-stone-200 rounded-full h-2">
           <div
             className={`h-2 rounded-full transition-all ${
-              timeLeft <= 5 ? "bg-red-500" : 
-              timeLeft <= 10 ? "bg-amber-500" : 
-              "bg-green-500"
+              timeLeft <= 5
+                ? "bg-red-500"
+                : timeLeft <= 10
+                  ? "bg-amber-500"
+                  : "bg-green-500"
             }`}
             style={{ width: `${(timeLeft / 120) * 100}%` }}
           ></div>
@@ -78,7 +95,8 @@ export function TurnTimer({ roomId, currentPlayerId, players, currentTurn }: Tur
         <div className="mt-3 text-sm">
           {timeLeft <= 5 ? (
             <div className="text-red-600 font-semibold">
-              ⚠️ Time running out! You'll automatically pass if you don't move quickly!
+              ⚠️ Time running out! You'll automatically pass if you don't move
+              quickly!
             </div>
           ) : (
             <div className="text-amber-600">

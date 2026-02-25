@@ -13,7 +13,11 @@ interface GameRoom {
 }
 
 interface GameLobbyProps {
-  onCreateRoom: (mode: GameMode, maxPlayers: number) => void;
+  onCreateRoom: (
+    mode: GameMode,
+    maxPlayers: number,
+    turnDuration: number,
+  ) => void;
   onJoinRoom: (roomCode: string) => void;
   availableRooms: GameRoom[];
   currentUserId?: string;
@@ -27,10 +31,11 @@ export function GameLobby({
 }: GameLobbyProps) {
   const [selectedMode, setSelectedMode] = React.useState<GameMode>("classic");
   const [maxPlayers, setMaxPlayers] = React.useState(2);
+  const [turnDuration, setTurnDuration] = React.useState(2);
   const [roomCode, setRoomCode] = React.useState("");
 
   const handleCreateRoom = () => {
-    onCreateRoom(selectedMode, maxPlayers);
+    onCreateRoom(selectedMode, maxPlayers, turnDuration);
   };
 
   const handleJoinRoom = () => {
@@ -140,6 +145,27 @@ export function GameLobby({
               </div>
             </div>
           )}
+
+          {/* Turn Duration Selection */}
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-3">
+              Turn Duration: {turnDuration} minutes
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              step="1"
+              value={turnDuration}
+              onChange={(e) => setTurnDuration(Number(e.target.value))}
+              className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <div className="flex justify-between text-xs text-stone-500 mt-1">
+              <span>1 min</span>
+              <span>5 min</span>
+              <span>10 min</span>
+            </div>
+          </div>
 
           {/* Create Room Button */}
           <button

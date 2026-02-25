@@ -43,27 +43,33 @@ export const LETTER_DISTRIBUTION: Record<
 // Bonus square configurations
 export const SQUARE_CONFIGS = {
   TW: {
-    label: "TW",
+    label: "TRIPLE WORD SCORE",
     wordMultiplier: 3,
+    color: "bg-[#ff4d4d]", // Red
   },
   DW: {
-    label: "DW",
+    label: "DOUBLE WORD SCORE",
     wordMultiplier: 2,
+    color: "bg-[#ffb3ba]", // Pink
   },
   TL: {
-    label: "TL",
+    label: "TRIPLE LETTER SCORE",
     letterMultiplier: 3,
+    color: "bg-[#4da6ff]", // Blue
   },
   DL: {
-    label: "DL",
+    label: "DOUBLE LETTER SCORE",
     letterMultiplier: 2,
+    color: "bg-[#b3e0ff]", // Light Blue
   },
   center: {
     label: "★",
     wordMultiplier: 2,
+    color: "bg-[#ffb3ba]", // Pink/Peach
   },
   normal: {
     label: "",
+    color: "bg-[#2e7d32]", // Dark Green
   },
 };
 

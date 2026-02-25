@@ -61,10 +61,10 @@ export function TileRack({
     <div
       ref={setNodeRef}
       className={`
-        bg-stone-800 rounded-xl p-3 sm:p-4 min-h-20
-        flex items-center justify-center gap-2 flex-wrap
-        transition-all duration-200 relative
-        ${isOver ? "bg-stone-700 scale-105" : ""}
+        bg-[#1e7a46] border-2 border-[#0e5a30] rounded-lg p-3 sm:p-4 min-h-24
+        flex items-center justify-center gap-3 flex-wrap
+        transition-all duration-200 relative shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]
+        ${isOver ? "bg-[#2d8a54] scale-[1.02] border-[#6da87a]" : ""}
         ${className}
       `}
       role="region"

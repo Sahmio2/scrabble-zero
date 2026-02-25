@@ -35,12 +35,15 @@ export function Tile({
       ref={setNodeRef}
       style={style}
       className={`
-        w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 border-2 border-amber-600 rounded-lg 
-        flex items-center justify-center font-bold text-amber-900
-        shadow-md hover:shadow-lg transition-shadow cursor-move
-        select-none touch-none min-w-10 min-h-10
-        ${isDragging ? "scale-105 rotate-2" : ""}
-        ${!isDraggable ? "cursor-default opacity-75" : ""}
+        w-10 h-10 sm:w-11 sm:h-11 rounded-[3px]
+        bg-linear-to-br from-[#f7f0d8] to-[#e8dfc4]
+        shadow-[2px_2px_4px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.7),inset_1px_0_0_rgba(255,255,255,0.4)]
+        border border-[#c4b896]
+        flex items-center justify-center
+        transition-all duration-200 cursor-move
+        select-none touch-none relative
+        ${isDragging ? "scale-105 rotate-2 z-50 shadow-xl opacity-90" : ""}
+        ${!isDraggable ? "cursor-default opacity-100 shadow-sm" : "hover:brightness-105 hover:scale-105"}
         ${className}
       `}
       {...listeners}
@@ -50,12 +53,14 @@ export function Tile({
       aria-grabbed={isDragging}
       tabIndex={isDraggable ? 0 : -1}
     >
-      <div className="flex flex-col items-center">
-        <span className="text-base sm:text-lg font-bold">{letter}</span>
-        {value !== undefined && (
-          <span className="text-xs text-amber-700">{value}</span>
-        )}
-      </div>
+      <span className="text-lg sm:text-[20px] font-serif font-bold text-[#1a1a1a] leading-none select-none">
+        {letter}
+      </span>
+      {value !== undefined && (
+        <span className="absolute bottom-0.5 right-[3px] text-[9px] font-sans font-bold text-[#4a4a4a] leading-none select-none">
+          {value}
+        </span>
+      )}
     </div>
   );
 }

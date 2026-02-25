@@ -44,13 +44,13 @@ export function GameChat({
     <div
       className={`fixed bottom-4 right-4 w-72 sm:w-80 transition-all ${
         isOpen ? "h-80 sm:h-96" : "h-12"
-      } bg-white rounded-lg shadow-xl border border-stone-200 z-40`}
+      } bg-[#0a2e1a] rounded-lg shadow-2xl border border-[#0e5a30] z-40 overflow-hidden`}
       role="complementary"
       aria-label="Game chat"
     >
       {/* Chat Header */}
       <div
-        className="flex items-center justify-between p-3 bg-stone-100 rounded-t-lg cursor-pointer"
+        className="flex items-center justify-between p-3 bg-[#145a32] border-b border-[#0a2e1a] cursor-pointer hover:bg-[#1a5c2a] transition-colors"
         onClick={() => setIsOpen(!isOpen)}
         role="button"
         aria-expanded={isOpen}
@@ -62,15 +62,17 @@ export function GameChat({
           }
         }}
       >
-        <h3 className="font-semibold text-stone-900">Game Chat</h3>
+        <h3 className="text-xs uppercase tracking-widest font-bold text-[#e8f5e8]">
+          Game Chat
+        </h3>
         <div className="flex items-center gap-2">
           {chatMessages.length > 0 && !isOpen && (
-            <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+            <span className="bg-[#c0883e] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
               {chatMessages.length}
             </span>
           )}
           <svg
-            className={`w-4 h-4 text-stone-600 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`w-4 h-4 text-[#a3c9a8] transition-transform ${isOpen ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -88,12 +90,12 @@ export function GameChat({
 
       {/* Chat Content */}
       {isOpen && (
-        <>
+        <div className="flex flex-col h-[calc(100%-48px)]">
           {/* Messages */}
-          <div className="h-64 overflow-y-auto p-3 space-y-2">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#0a2e1a] custom-scrollbar">
             {chatMessages.length === 0 ? (
-              <div className="text-center text-stone-500 text-sm py-8">
-                No messages yet. Start a conversation!
+              <div className="text-center text-[#6da87a] text-xs py-8 font-medium italic">
+                No messages yet...
               </div>
             ) : (
               chatMessages.map((msg, index) => (
@@ -104,23 +106,25 @@ export function GameChat({
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] ${
+                    className={`max-w-[85%] ${
                       msg.playerId === currentUserId
-                        ? "bg-blue-600 text-white"
-                        : "bg-stone-100 text-stone-900"
-                    } rounded-lg px-3 py-2`}
+                        ? "bg-[#c0883e] text-white rounded-br-none"
+                        : "bg-[#1e7a46] text-[#e8f5e8] rounded-bl-none"
+                    } rounded-xl px-3 py-2 shadow-md`}
                   >
                     {msg.playerId !== currentUserId && (
-                      <div className="text-xs font-semibold mb-1 opacity-75">
+                      <div className="text-[10px] font-bold mb-1 text-[#b8dab8] uppercase tracking-tighter">
                         {msg.playerName}
                       </div>
                     )}
-                    <div className="text-sm wrap-break-word">{msg.message}</div>
+                    <div className="text-sm font-medium leading-relaxed">
+                      {msg.message}
+                    </div>
                     <div
-                      className={`text-xs mt-1 ${
+                      className={`text-[9px] mt-1 font-bold uppercase tracking-tighter ${
                         msg.playerId === currentUserId
-                          ? "text-blue-100"
-                          : "text-stone-500"
+                          ? "text-white/70"
+                          : "text-[#6da87a]"
                       }`}
                     >
                       {formatTimestamp(msg.timestamp)}
@@ -135,21 +139,21 @@ export function GameChat({
           {/* Message Input */}
           <form
             onSubmit={handleSendMessage}
-            className="p-3 border-t border-stone-200"
+            className="p-3 bg-[#145a32] border-t border-[#0a2e1a]"
           >
             <div className="flex gap-2">
               <input
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                placeholder="Type your message..."
+                className="flex-1 px-3 py-2 bg-[#0a2e1a] border border-[#0e5a30] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c0883e] text-[#e8f5e8] text-sm placeholder-[#6da87a]"
                 maxLength={200}
               />
               <button
                 type="submit"
                 disabled={!message.trim()}
-                className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
+                className="bg-[#c0883e] text-white px-3 py-2 rounded-lg hover:bg-[#d4a04a] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
               >
                 <svg
                   className="w-4 h-4"
@@ -166,11 +170,8 @@ export function GameChat({
                 </svg>
               </button>
             </div>
-            <div className="text-xs text-stone-500 mt-1">
-              Press Enter to send
-            </div>
           </form>
-        </>
+        </div>
       )}
     </div>
   );

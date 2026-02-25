@@ -123,7 +123,7 @@ export function InteractiveBoard({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 2, // Reduced from 8 for better responsiveness
       },
     }),
   );
@@ -191,38 +191,44 @@ export function InteractiveBoard({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="bg-stone-700 p-2 sm:p-4 lg:p-6 rounded-xl shadow-xl overflow-x-auto">
-        <div
-          className="grid gap-0.5 sm:gap-1 mx-auto"
-          style={{
-            gridTemplateColumns: "repeat(15, minmax(0, 1fr))",
-            width: "fit-content",
-            minWidth: "min-content",
-          }}
-          role="grid"
-          aria-label="Scrabble game board"
-        >
-          {Array.from({ length: 15 }, (_, row) =>
-            Array.from({ length: 15 }, (_, col) => {
-              const tile = getTileAtPosition(row, col);
-              const bonus = bonusSquares[`${row}-${col}`];
+      <div className="bg-[#0e3d22] p-2 sm:p-4 lg:p-6 rounded-xl shadow-2xl overflow-x-auto min-h-screen">
+        <div className="max-w-4xl mx-auto">
+          <div
+            className="grid gap-0.5 sm:gap-1 mx-auto bg-[#0e5a30] p-1 sm:p-2 rounded shadow-inner border-4 border-[#0a2e1a]"
+            style={{
+              gridTemplateColumns: "repeat(15, minmax(0, 1fr))",
+              width: "fit-content",
+              minWidth: "min-content",
+            }}
+            role="grid"
+            aria-label="Scrabble game board"
+          >
+            {Array.from({ length: 15 }, (_, row) =>
+              Array.from({ length: 15 }, (_, col) => {
+                const tile = getTileAtPosition(row, col);
+                const bonus = bonusSquares[`${row}-${col}`];
 
-              return (
-                <BoardSquare
-                  key={`${row}-${col}`}
-                  row={row}
-                  col={col}
-                  tile={
-                    tile
-                      ? { id: tile.id, letter: tile.letter, value: tile.points }
-                      : undefined
-                  }
-                  bonus={bonus}
-                  isDroppable={isCurrentPlayerTurn}
-                />
-              );
-            }),
-          )}
+                return (
+                  <BoardSquare
+                    key={`${row}-${col}`}
+                    row={row}
+                    col={col}
+                    tile={
+                      tile
+                        ? {
+                            id: tile.id,
+                            letter: tile.letter,
+                            value: tile.points,
+                          }
+                        : undefined
+                    }
+                    bonus={bonus}
+                    isDroppable={isCurrentPlayerTurn}
+                  />
+                );
+              }),
+            )}
+          </div>
         </div>
       </div>
 

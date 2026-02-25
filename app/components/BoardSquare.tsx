@@ -32,21 +32,21 @@ export function BoardSquare({
   });
 
   const getBonusClass = () => {
-    if (!bonus) return "bg-stone-100 border-stone-300";
+    if (!bonus) return "bg-[#1e7a46] border-[rgba(0,0,0,0.15)]"; // Board green
 
     switch (bonus) {
       case "double-word":
-        return "bg-pink-100 border-pink-400 text-pink-700";
+        return "bg-[#e8a87c] border-[#d4a04a] text-[#7b3f00] text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
       case "triple-word":
-        return "bg-red-100 border-red-400 text-red-700";
+        return "bg-[#c0392b] border-[#a02626] text-white text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
       case "double-letter":
-        return "bg-blue-100 border-blue-400 text-blue-700";
+        return "bg-[#85c1e9] border-[#1a5276] text-[#1a5276] text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
       case "triple-letter":
-        return "bg-purple-100 border-purple-400 text-purple-700";
+        return "bg-[#2471a3] border-[#1a2e1a] text-white text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
       case "center":
-        return "bg-amber-100 border-amber-400 text-amber-700";
+        return "bg-[#e8a87c] border-[#d4a04a] text-[#7b3f00]";
       default:
-        return "bg-stone-100 border-stone-300";
+        return "bg-[#1e7a46] border-[rgba(0,0,0,0.15)]";
     }
   };
 
@@ -55,13 +55,13 @@ export function BoardSquare({
 
     switch (bonus) {
       case "double-word":
-        return "DW";
+        return "DOUBLE WORD SCORE";
       case "triple-word":
-        return "TW";
+        return "TRIPLE WORD SCORE";
       case "double-letter":
-        return "DL";
+        return "DOUBLE LETTER SCORE";
       case "triple-letter":
-        return "TL";
+        return "TRIPLE LETTER SCORE";
       case "center":
         return "★";
       default:
@@ -90,11 +90,11 @@ export function BoardSquare({
     <div
       ref={setNodeRef}
       className={`
-        select-none touch-none min-w-10 min-h-10 lg:w-12 lg:h-12 border-2 rounded flex items-center justify-center
+        select-none touch-none min-w-8 min-h-8 sm:min-w-10 sm:min-h-10 lg:w-12 lg:h-12 border rounded flex items-center justify-center
         transition-all duration-200 relative
         ${getBonusClass()}
-        ${isOver && isDroppable ? "scale-105 shadow-lg" : ""}
-        ${tile ? "border-amber-600" : ""}
+        ${isOver && isDroppable ? "scale-105 shadow-lg brightness-110 z-10" : ""}
+        ${tile ? "border-amber-600 bg-amber-50 shadow-sm" : ""}
       `}
       aria-label={
         tile
