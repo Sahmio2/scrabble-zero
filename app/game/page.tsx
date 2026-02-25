@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { GameLobby } from "@/app/components/GameLobby";
 import { GameRoom } from "@/app/components/GameRoom";
 import { ScrabbleBoard } from "@/app/components/ScrabbleBoard";
@@ -86,8 +86,8 @@ export default function GamePage() {
     socket,
     connected,
     players: socketPlayers,
-    currentTurn,
-    timeLeft,
+    currentTurn: serverCurrentTurn,
+    timeLeft: serverTimeLeft,
     gameStarted: serverGameStarted,
     lastChallengeResult,
     joinRoom,
@@ -97,7 +97,34 @@ export default function GamePage() {
   } = useSocket(currentRoom?.code);
 
   const [localGameStarted, setLocalGameStarted] = useState(false);
+  const [localTimeLeft, setLocalTimeLeft] = useState(120);
+  const [localCurrentTurn, setLocalCurrentTurn] = useState(0);
   const gameStarted = serverGameStarted || localGameStarted;
+  const currentTurn =
+    currentRoom?.mode === "practice" ? localCurrentTurn : serverCurrentTurn;
+  const timeLeft =
+    currentRoom?.mode === "practice" ? localTimeLeft : serverTimeLeft;
+
+  const localTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (currentRoom?.mode === "practice" && localGameStarted) {
+      if (localTimerRef.current) clearInterval(localTimerRef.current);
+
+      localTimerRef.current = setInterval(() => {
+        setLocalTimeLeft((prev) => {
+          if (prev <= 0) {
+            handlePassTurn();
+            return 120;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (localTimerRef.current) clearInterval(localTimerRef.current);
+    };
+  }, [localGameStarted, localCurrentTurn, currentRoom?.mode]);
 
   useEffect(() => {
     if (!lastChallengeResult?.penalty) return;
@@ -202,6 +229,13 @@ export default function GamePage() {
   };
 
   const handlePassTurn = () => {
+    if (currentRoom?.mode === "practice") {
+      const nextPlayerIndex = (currentTurn + 1) % players.length;
+      setLocalCurrentTurn(nextPlayerIndex);
+      setLocalTimeLeft(120);
+      return;
+    }
+
     if (socket && currentRoom?.code) {
       const nextPlayerIndex = (currentTurn + 1) % players.length;
       endTurn(currentRoom.code, nextPlayerIndex);
@@ -514,6 +548,7 @@ export default function GamePage() {
                     currentPlayerId={currentUserId}
                     players={players}
                     currentTurn={currentTurn}
+                    timeLeft={timeLeft}
                   />
                 )}
 

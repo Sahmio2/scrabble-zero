@@ -8,6 +8,7 @@ interface TurnTimerProps {
   currentPlayerId: string;
   players: Array<{ id: string; name: string }>;
   currentTurn: number;
+  timeLeft: number;
 }
 
 export function TurnTimer({
@@ -15,8 +16,8 @@ export function TurnTimer({
   currentPlayerId,
   players,
   currentTurn,
+  timeLeft,
 }: TurnTimerProps) {
-  const { timeLeft, turnTimer } = useSocket(roomId);
   const isCurrentPlayerTurn = players[currentTurn]?.id === currentPlayerId;
   const currentPlayerName = players[currentTurn]?.name || "Unknown";
 
