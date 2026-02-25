@@ -11,6 +11,16 @@ import { ChallengeSystem } from "@/app/components/ChallengeSystem";
 import { InteractiveBoard } from "@/app/components/InteractiveBoard";
 import { TileRack } from "@/app/components/TileRack";
 import { GameControls } from "@/app/components/GameControls";
+import { Tile } from "@/app/components/Tile";
+import {
+  DndContext,
+  DragEndEvent,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from "@dnd-kit/core";
 import { useSocket } from "@/hooks/useSocket";
 import {
   generateRoomCode,
@@ -124,6 +134,64 @@ export default function GamePage() {
       if (localTimerRef.current) clearInterval(localTimerRef.current);
     };
   }, [localGameStarted, localCurrentTurn, currentRoom?.mode]);
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 2,
+      },
+    }),
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) {
+      setActiveId(null);
+      return;
+    }
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Check if dropping on board square
+    if (overId.startsWith("square-")) {
+      const [, row, col] = overId.split("-").map(Number);
+      const tile = rackTiles.find((t) => t.id === activeId);
+
+      if (tile && isCurrentPlayerTurn) {
+        handleTilePlace(activeId, row, col);
+      }
+    }
+    // Check if dropping back on rack
+    else if (overId === "tile-rack") {
+      const tile = placedTiles.find((t) => t.id === activeId);
+      if (tile) {
+        handleTileRemove(activeId);
+      }
+    }
+    // Handle rack reordering
+    else if (rackTiles.some((t) => t.id === overId)) {
+      const oldIndex = rackTiles.findIndex((t) => t.id === activeId);
+      const newIndex = rackTiles.findIndex((t) => t.id === overId);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        handleTileReorder(oldIndex, newIndex);
+      }
+    }
+
+    setActiveId(null);
+  };
+
+  const activeTile = activeId
+    ? [...rackTiles, ...placedTiles].find((t) => t.id === activeId)
+    : null;
 
   useEffect(() => {
     if (!lastChallengeResult?.penalty) return;
@@ -391,148 +459,160 @@ export default function GamePage() {
 
   if (gameState === "playing") {
     return (
-      <div className="h-screen bg-[#0e3d22] game-container overflow-hidden flex flex-col">
-        <div className="bg-[#0a2e1a] border-b border-[#0e5a30] py-1 px-4 shadow-lg z-30">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1">
-              {players.map((player, index) => (
-                <div
-                  key={player.id}
-                  className={`player-badge flex items-center gap-2 px-2.5 py-1 rounded-md transition-all ${
-                    index === currentTurn
-                      ? "bg-[#c0883e] text-white ring-1 ring-[#d4a04a] shadow-md"
-                      : "bg-[#1a5c2a] text-[#a3c9a8] opacity-70"
-                  }`}
-                >
-                  <div className="w-5 h-5 rounded-full bg-[#145a32] border border-[#2d8a54] flex items-center justify-center text-[9px] font-serif font-bold shadow-inner">
-                    {player.name.charAt(0).toUpperCase()}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="h-screen bg-[#0e3d22] game-container overflow-hidden flex flex-col">
+          <div className="bg-[#0a2e1a] border-b border-[#0e5a30] py-1 px-4 shadow-lg z-30">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1">
+                {players.map((player, index) => (
+                  <div
+                    key={player.id}
+                    className={`player-badge flex items-center gap-2 px-2.5 py-1 rounded-md transition-all ${
+                      index === currentTurn
+                        ? "bg-[#c0883e] text-white ring-1 ring-[#d4a04a] shadow-md"
+                        : "bg-[#1a5c2a] text-[#a3c9a8] opacity-70"
+                    }`}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-[#145a32] border border-[#2d8a54] flex items-center justify-center text-[9px] font-serif font-bold shadow-inner">
+                      {player.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[7px] font-bold uppercase tracking-tighter leading-none mb-0.5">
+                        {player.id === currentUserId ? "You" : player.name}
+                      </span>
+                      <span
+                        className={`player-badge__score px-1.5 py-0 rounded-xs text-[9px] font-serif font-bold ${
+                          index === currentTurn ? "bg-[#a06e2c]" : "bg-[#145a32]"
+                        }`}
+                      >
+                        {player.score}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[7px] font-bold uppercase tracking-tighter leading-none mb-0.5">
-                      {player.id === currentUserId ? "You" : player.name}
-                    </span>
-                    <span
-                      className={`player-badge__score px-1.5 py-0 rounded-xs text-[9px] font-serif font-bold ${
-                        index === currentTurn ? "bg-[#a06e2c]" : "bg-[#145a32]"
-                      }`}
-                    >
-                      {player.score}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-[#6da87a] text-[9px] font-bold uppercase tracking-widest hidden md:block">
-                Room:{" "}
-                <span className="text-[#e8f5e8] font-mono">
-                  {currentRoom?.code}
-                </span>
+                ))}
               </div>
-              <button
-                onClick={handleLeaveRoom}
-                className="bg-[#c94c4c] text-white px-2 py-1 rounded font-bold hover:bg-[#d32f2f] transition-all shadow-sm uppercase text-[8px] tracking-widest"
-              >
-                Quit
-              </button>
+              <div className="flex items-center gap-3">
+                <div className="text-[#6da87a] text-[9px] font-bold uppercase tracking-widest hidden md:block">
+                  Room:{" "}
+                  <span className="text-[#e8f5e8] font-mono">
+                    {currentRoom?.code}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLeaveRoom}
+                  className="bg-[#c94c4c] text-white px-2 py-1 rounded font-bold hover:bg-[#d32f2f] transition-all shadow-sm uppercase text-[8px] tracking-widest"
+                >
+                  Quit
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <main className="flex-1 overflow-hidden">
-          <div className="h-full max-w-7xl mx-auto grid lg:grid-cols-[1fr_280px] gap-0">
-            <div className="flex flex-col h-full bg-[#0e3d22] overflow-hidden">
-              <div className="flex-1 flex items-center justify-center p-1 overflow-hidden">
-                <div className="scale-[0.8] sm:scale-[0.85] lg:scale-[0.9] transition-transform origin-center">
-                  <InteractiveBoard
-                    boardTiles={placedTiles}
-                    rackTiles={rackTiles}
-                    onTilePlace={handleTilePlace}
-                    onTileRemove={handleTileRemove}
-                    onTileReorder={handleTileReorder}
-                    isCurrentPlayerTurn={isCurrentPlayerTurn}
-                  />
-                </div>
-              </div>
-              <div className="bg-[#145a32] border-t border-[#0a2e1a] p-1.5 lg:p-2 shadow-[0_-4px_12px_rgba(0,0,0,0.3)]">
-                <div className="max-w-xl mx-auto flex flex-col gap-0.5">
-                  <div className="flex items-center justify-between px-1">
-                    <span className="text-[7px] uppercase tracking-widest font-bold text-[#a3c9a8]">
-                      Your Rack
-                    </span>
-                    <button
-                      onClick={handleRecallTiles}
-                      disabled={placedTiles.length === 0}
-                      className="text-[#b8dab8] hover:text-white disabled:opacity-30 uppercase text-[7px] font-bold tracking-widest transition-colors"
-                    >
-                      Recall
-                    </button>
-                  </div>
-                  <div className="flex justify-center">
-                    <TileRack
-                      tiles={rackTiles}
-                      onTileReorder={handleTileReorder}
-                      className="min-h-10! p-1!"
+          <main className="flex-1 overflow-hidden">
+            <div className="h-full max-w-7xl mx-auto grid lg:grid-cols-[1fr_280px] gap-0">
+              <div className="flex flex-col h-full bg-[#0e3d22] overflow-hidden">
+                <div className="flex-1 flex items-center justify-center p-1 overflow-hidden">
+                  <div className="scale-[0.8] sm:scale-[0.85] lg:scale-[0.9] transition-transform origin-center">
+                    <InteractiveBoard
+                      boardTiles={placedTiles}
+                      isCurrentPlayerTurn={isCurrentPlayerTurn}
                     />
                   </div>
                 </div>
+                <div className="bg-[#145a32] border-t border-[#0a2e1a] p-1.5 lg:p-2 shadow-[0_-4px_12px_rgba(0,0,0,0.3)]">
+                  <div className="max-w-xl mx-auto flex flex-col gap-0.5">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[7px] uppercase tracking-widest font-bold text-[#a3c9a8]">
+                        Your Rack
+                      </span>
+                      <button
+                        onClick={handleRecallTiles}
+                        disabled={placedTiles.length === 0}
+                        className="text-[#b8dab8] hover:text-white disabled:opacity-30 uppercase text-[7px] font-bold tracking-widest transition-colors"
+                      >
+                        Recall
+                      </button>
+                    </div>
+                    <div className="flex justify-center">
+                      <TileRack
+                        tiles={rackTiles}
+                        onTileReorder={handleTileReorder}
+                        className="min-h-10! p-1!"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="hidden lg:flex flex-col h-full bg-[#0a2e1a] border-l border-[#0e5a30] overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-2 space-y-3 custom-scrollbar">
-                {currentRoom && (
-                  <div className="scale-90 origin-top">
-                    <TurnTimer
-                      roomId={currentRoom.code}
-                      currentPlayerId={currentUserId}
-                      players={players}
-                      currentTurn={currentTurn}
-                      timeLeft={timeLeft}
+              <div className="hidden lg:flex flex-col h-full bg-[#0a2e1a] border-l border-[#0e5a30] overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-2 space-y-3 custom-scrollbar">
+                  {currentRoom && (
+                    <div className="scale-90 origin-top">
+                      <TurnTimer
+                        roomId={currentRoom.code}
+                        currentPlayerId={currentUserId}
+                        players={players}
+                        currentTurn={currentTurn}
+                        timeLeft={timeLeft}
+                      />
+                    </div>
+                  )}
+                  <div className="scale-95 origin-top">
+                    <GameControls
+                      roomId={currentRoom?.code || ""}
+                      currentUserId={currentUserId}
+                      placedTiles={placedTiles}
+                      board={board}
+                      onPlayMove={handlePlayMove}
+                      onPassTurn={handlePassTurn}
+                      onSwapTiles={handleSwapTiles}
+                      onRecallTiles={handleRecallTiles}
+                      isCurrentPlayerTurn={isCurrentPlayerTurn}
+                      isFirstMove={
+                        placedTiles.every((tile) => !board[tile.row][tile.col]) &&
+                        placedTiles.some((t) => t.row === 7 && t.col === 7)
+                      }
                     />
                   </div>
-                )}
-                <div className="scale-95 origin-top">
-                  <GameControls
-                    roomId={currentRoom?.code || ""}
-                    currentUserId={currentUserId}
-                    placedTiles={placedTiles}
-                    board={board}
-                    onPlayMove={handlePlayMove}
-                    onPassTurn={handlePassTurn}
-                    onSwapTiles={handleSwapTiles}
-                    onRecallTiles={handleRecallTiles}
-                    isCurrentPlayerTurn={isCurrentPlayerTurn}
-                    isFirstMove={
-                      placedTiles.every((tile) => !board[tile.row][tile.col]) &&
-                      placedTiles.some((t) => t.row === 7 && t.col === 7)
-                    }
-                  />
+                  {currentRoom && (
+                    <div className="scale-90 origin-top">
+                      <ChallengeSystem
+                        roomId={currentRoom.code}
+                        currentUserId={currentUserId}
+                        players={players}
+                        currentTurn={currentTurn}
+                      />
+                    </div>
+                  )}
                 </div>
-                {currentRoom && (
-                  <div className="scale-90 origin-top">
-                    <ChallengeSystem
+                <div className="h-1/4 border-t border-[#0e5a30]">
+                  {currentRoom && (
+                    <GameChat
                       roomId={currentRoom.code}
                       currentUserId={currentUserId}
-                      players={players}
-                      currentTurn={currentTurn}
+                      currentUserName={userName}
                     />
-                  </div>
-                )}
-              </div>
-              <div className="h-1/4 border-t border-[#0e5a30]">
-                {currentRoom && (
-                  <GameChat
-                    roomId={currentRoom.code}
-                    currentUserId={currentUserId}
-                    currentUserName={userName}
-                  />
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </main>
-      </div>
+          </main>
+        </div>
+        <DragOverlay>
+          {activeTile ? (
+            <Tile
+              id={activeTile.id}
+              letter={activeTile.letter}
+              value={activeTile.points ?? (activeTile as any).value}
+              isDraggable={false}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     );
   }
 
