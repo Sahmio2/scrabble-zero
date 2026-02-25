@@ -6,6 +6,157 @@ import type {
   User,
 } from "@prisma/client";
 
+// Standard Scrabble letter distribution with points
+export const LETTER_DISTRIBUTION: Record<
+  string,
+  { count: number; points: number }
+> = {
+  A: { count: 9, points: 1 },
+  B: { count: 2, points: 3 },
+  C: { count: 2, points: 3 },
+  D: { count: 4, points: 2 },
+  E: { count: 12, points: 1 },
+  F: { count: 2, points: 4 },
+  G: { count: 3, points: 2 },
+  H: { count: 2, points: 4 },
+  I: { count: 9, points: 1 },
+  J: { count: 1, points: 8 },
+  K: { count: 1, points: 5 },
+  L: { count: 4, points: 1 },
+  M: { count: 2, points: 3 },
+  N: { count: 6, points: 1 },
+  O: { count: 8, points: 1 },
+  P: { count: 2, points: 3 },
+  Q: { count: 1, points: 10 },
+  R: { count: 6, points: 1 },
+  S: { count: 4, points: 1 },
+  T: { count: 6, points: 1 },
+  U: { count: 4, points: 1 },
+  V: { count: 2, points: 4 },
+  W: { count: 2, points: 4 },
+  X: { count: 1, points: 8 },
+  Y: { count: 2, points: 4 },
+  Z: { count: 1, points: 10 },
+  _: { count: 2, points: 0 }, // Blank tiles
+};
+
+// Bonus square configurations
+export const SQUARE_CONFIGS = {
+  TW: {
+    label: "TW",
+    wordMultiplier: 3,
+  },
+  DW: {
+    label: "DW",
+    wordMultiplier: 2,
+  },
+  TL: {
+    label: "TL",
+    letterMultiplier: 3,
+  },
+  DL: {
+    label: "DL",
+    letterMultiplier: 2,
+  },
+  center: {
+    label: "★",
+    wordMultiplier: 2,
+  },
+  normal: {
+    label: "",
+  },
+};
+
+// Bonus square positions (using same format as spec)
+export const BONUS_SQUARES: Record<string, string> = {
+  // Center star
+  "7-7": "center",
+
+  // Triple Word squares
+  "0-0": "TW",
+  "0-7": "TW",
+  "0-14": "TW",
+  "7-0": "TW",
+  "7-14": "TW",
+  "14-0": "TW",
+  "14-7": "TW",
+  "14-14": "TW",
+
+  // Double Word squares
+  "1-1": "DW",
+  "2-2": "DW",
+  "3-3": "DW",
+  "4-4": "DW",
+  "10-10": "DW",
+  "11-11": "DW",
+  "12-12": "DW",
+  "13-13": "DW",
+  "1-13": "DW",
+  "2-12": "DW",
+  "3-11": "DW",
+  "4-10": "DW",
+  "10-4": "DW",
+  "11-3": "DW",
+  "12-2": "DW",
+  "13-1": "DW",
+
+  // Triple Letter squares
+  "1-5": "TL",
+  "1-9": "TL",
+  "5-1": "TL",
+  "5-5": "TL",
+  "5-9": "TL",
+  "5-13": "TL",
+  "9-1": "TL",
+  "9-5": "TL",
+  "9-9": "TL",
+  "9-13": "TL",
+  "13-5": "TL",
+  "13-9": "TL",
+
+  // Double Letter squares
+  "0-3": "DL",
+  "0-11": "DL",
+  "2-0": "DL",
+  "2-6": "DL",
+  "2-8": "DL",
+  "2-14": "DL",
+  "3-0": "DL",
+  "3-7": "DL",
+  "3-14": "DL",
+  "6-0": "DL",
+  "6-6": "DL",
+  "6-8": "DL",
+  "6-14": "DL",
+  "7-3": "DL",
+  "7-11": "DL",
+  "8-0": "DL",
+  "8-6": "DL",
+  "8-8": "DL",
+  "8-14": "DL",
+  "11-0": "DL",
+  "11-7": "DL",
+  "11-14": "DL",
+  "12-0": "DL",
+  "12-6": "DL",
+  "12-8": "DL",
+  "12-14": "DL",
+  "14-3": "DL",
+  "14-11": "DL",
+};
+
+// Challenge timer and penalties
+export const CHALLENGE_TIMER_SECONDS = 15;
+export const CHALLENGE_PENALTY_POINTS = 10;
+export const BINGO_BONUS = 50;
+
+export interface TileData {
+  id: string;
+  letter: string;
+  points: number;
+  isBlank?: boolean;
+}
+
 export interface GameRoom {
   id: string;
   code: string;
@@ -20,31 +171,50 @@ export interface GameRoom {
 export interface Player {
   id: string;
   name: string;
+  avatar?: string;
   score: number;
   isHost: boolean;
   isReady: boolean;
-  tiles: string[];
+  tiles: TileData[];
   userId: string;
+  timeRemaining?: number;
+  longestWord?: string;
+  bingos?: number;
 }
 
 export interface GameMove {
   playerId: string;
-  tiles: { letter: string; row: number; col: number }[];
+  tiles: { letter: string; row: number; col: number; isBlank?: boolean }[];
+  words: string[];
   score: number;
   timestamp: Date;
+}
+
+export interface GameSettings {
+  dictionary: "TWL" | "SOWPODS" | "ENABLE";
+  challengeMode: boolean;
+  turnTimerMinutes: number;
 }
 
 export interface GameState {
   room: GameRoom;
   currentTurn: number;
-  board: (string | null)[][];
-  playerRacks: Record<string, string[]>;
-  tileBag: string[];
+  board: (TileData | null)[][];
+  playerRacks: Record<string, TileData[]>;
+  tileBag: TileData[];
   moves: GameMove[];
+  settings: GameSettings;
   turnTimer: {
     playerId: string;
     startTime: Date;
-    duration: number; // seconds
+    duration: number;
+  };
+  challengeState?: {
+    active: boolean;
+    playerIndex: number;
+    word: string;
+    score: number;
+    timeRemaining: number;
   };
 }
 
@@ -58,45 +228,24 @@ export function generateRoomCode(): string {
   return code;
 }
 
-// Initialize Scrabble tile distribution
-export function initializeTileBag(): string[] {
-  const distribution = [
-    { letter: "A", count: 9 },
-    { letter: "B", count: 2 },
-    { letter: "C", count: 2 },
-    { letter: "D", count: 4 },
-    { letter: "E", count: 12 },
-    { letter: "F", count: 2 },
-    { letter: "G", count: 3 },
-    { letter: "H", count: 2 },
-    { letter: "I", count: 9 },
-    { letter: "J", count: 1 },
-    { letter: "K", count: 1 },
-    { letter: "L", count: 4 },
-    { letter: "M", count: 2 },
-    { letter: "N", count: 6 },
-    { letter: "O", count: 8 },
-    { letter: "P", count: 2 },
-    { letter: "Q", count: 1 },
-    { letter: "R", count: 6 },
-    { letter: "S", count: 4 },
-    { letter: "T", count: 6 },
-    { letter: "U", count: 4 },
-    { letter: "V", count: 2 },
-    { letter: "W", count: 2 },
-    { letter: "X", count: 1 },
-    { letter: "Y", count: 2 },
-    { letter: "Z", count: 1 },
-  ];
+// Initialize Scrabble tile bag with proper distribution
+export function initializeTileBag(): TileData[] {
+  const bag: TileData[] = [];
+  let idCounter = 0;
 
-  const bag: string[] = [];
-  distribution.forEach(({ letter, count }) => {
+  // Create tiles based on LETTER_DISTRIBUTION
+  Object.entries(LETTER_DISTRIBUTION).forEach(([letter, { count, points }]) => {
     for (let i = 0; i < count; i++) {
-      bag.push(letter);
+      bag.push({
+        id: `tile-${idCounter++}`,
+        letter: letter === "_" ? " " : letter, // Blank tiles represented as space
+        points: points,
+        isBlank: letter === "_",
+      });
     }
   });
 
-  // Shuffle the bag
+  // Shuffle using Fisher-Yates algorithm
   for (let i = bag.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [bag[i], bag[j]] = [bag[j], bag[i]];
@@ -105,8 +254,23 @@ export function initializeTileBag(): string[] {
   return bag;
 }
 
+// Draw tiles from the bag
+export function drawTiles(tileBag: TileData[], count: number): TileData[] {
+  return tileBag.splice(0, Math.min(count, tileBag.length));
+}
+
+// Refill player rack to 7 tiles
+export function refillPlayerRack(
+  playerTiles: TileData[],
+  tileBag: TileData[],
+): TileData[] {
+  const needed = 7 - playerTiles.length;
+  const drawn = drawTiles(tileBag, needed);
+  return [...playerTiles, ...drawn];
+}
+
 // Initialize empty 15x15 board
-export function initializeBoard(): (string | null)[][] {
+export function initializeBoard(): (TileData | null)[][] {
   return Array(15)
     .fill(null)
     .map(() => Array(15).fill(null));
@@ -114,10 +278,10 @@ export function initializeBoard(): (string | null)[][] {
 
 // Deal initial tiles to players
 export function dealInitialTiles(
-  tileBag: string[],
+  tileBag: TileData[],
   playerCount: number,
-): Record<string, string[]> {
-  const racks: Record<string, string[]> = {};
+): Record<string, TileData[]> {
+  const racks: Record<string, TileData[]> = {};
   const tilesPerPlayer = 7;
 
   for (let i = 0; i < playerCount; i++) {

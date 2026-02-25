@@ -1,4 +1,5 @@
 import React from "react";
+import type { TileData } from "@/lib/gameLogic";
 
 interface Player {
   id: string;
@@ -6,7 +7,7 @@ interface Player {
   score: number;
   isHost: boolean;
   isReady: boolean;
-  tiles: string[];
+  tiles: TileData[];
 }
 
 interface GameRoomProps {
@@ -30,8 +31,8 @@ export function GameRoom({
   onToggleReady,
   gameMode,
 }: GameRoomProps) {
-  const currentPlayer = players.find(p => p.id === currentUserId);
-  const allReady = players.filter(p => !p.isHost).every(p => p.isReady);
+  const currentPlayer = players.find((p) => p.id === currentUserId);
+  const allReady = players.filter((p) => !p.isHost).every((p) => p.isReady);
   const canStart = isHost && players.length >= 2 && allReady;
 
   return (
@@ -40,9 +41,11 @@ export function GameRoom({
       <header className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-stone-900">Room {roomCode}</h1>
+            <h1 className="text-3xl font-bold text-stone-900">
+              Room {roomCode}
+            </h1>
             <div className="text-stone-600 mt-1">
-              Mode: {gameMode.charAt(0).toUpperCase() + gameMode.slice(1)} • 
+              Mode: {gameMode.charAt(0).toUpperCase() + gameMode.slice(1)} •
               {players.length} players
             </div>
           </div>
@@ -75,17 +78,23 @@ export function GameRoom({
                 <div>
                   <div className="font-semibold text-stone-900">
                     {player.name}
-                    {player.isHost && <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">HOST</span>}
-                    {player.id === currentUserId && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">YOU</span>}
+                    {player.isHost && (
+                      <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                        HOST
+                      </span>
+                    )}
+                    {player.id === currentUserId && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        YOU
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-stone-600">
                     {player.isReady ? "✓ Ready" : "⏳ Not Ready"}
                   </div>
                 </div>
               </div>
-              <div className="text-sm text-stone-500">
-                Player {index + 1}
-              </div>
+              <div className="text-sm text-stone-500">Player {index + 1}</div>
             </div>
           ))}
         </div>
@@ -94,24 +103,30 @@ export function GameRoom({
       {/* Game Controls */}
       <section className="bg-white rounded-xl shadow-lg p-6">
         <h2 className="text-xl font-bold text-stone-900 mb-4">Game Controls</h2>
-        
+
         {isHost ? (
           <div className="space-y-4">
-            <div className={`p-4 rounded-lg ${
-              canStart 
-                ? "bg-green-50 border border-green-200" 
-                : "bg-amber-50 border border-amber-200"
-            }`}>
+            <div
+              className={`p-4 rounded-lg ${
+                canStart
+                  ? "bg-green-50 border border-green-200"
+                  : "bg-amber-50 border border-amber-200"
+              }`}
+            >
               <div className="font-semibold text-stone-900">
                 {canStart ? "Ready to start!" : "Waiting for players..."}
               </div>
               <div className="text-sm text-stone-600 mt-1">
                 {players.length < 2 && "Need at least 2 players to start"}
-                {players.length >= 2 && !allReady && "Waiting for all players to be ready"}
-                {players.length >= 2 && allReady && "All players are ready - you can start the game!"}
+                {players.length >= 2 &&
+                  !allReady &&
+                  "Waiting for all players to be ready"}
+                {players.length >= 2 &&
+                  allReady &&
+                  "All players are ready - you can start the game!"}
               </div>
             </div>
-            
+
             <button
               onClick={onStartGame}
               disabled={!canStart}
@@ -123,12 +138,14 @@ export function GameRoom({
         ) : (
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="font-semibold text-stone-900">Waiting for host to start</div>
+              <div className="font-semibold text-stone-900">
+                Waiting for host to start
+              </div>
               <div className="text-sm text-stone-600 mt-1">
                 Mark yourself as ready when you're prepared to play
               </div>
             </div>
-            
+
             <button
               onClick={onToggleReady}
               className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${

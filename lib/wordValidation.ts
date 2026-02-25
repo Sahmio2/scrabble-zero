@@ -1,10 +1,13 @@
 import type { PlacedTile } from "./scoring";
+import type { TileData } from "./gameLogic";
+import { getLocalDictionary, type DictionaryType } from "./dictionaries";
 
 export interface WordScore {
   word: string;
   tiles: PlacedTile[];
   score: number;
   isValid: boolean;
+  isNewTile?: boolean[]; // Tracks which tiles are new placements
 }
 
 export interface ValidationResult {
@@ -114,15 +117,18 @@ const COMMON_WORDS = new Set([
  */
 export function extractWordsFromMove(
   tiles: PlacedTile[],
-  board: (string | null)[][],
+  board: (TileData | null)[][],
 ): WordScore[] {
   const words: WordScore[] = [];
   const newTilePositions = new Set(tiles.map((t) => `${t.row}-${t.col}`));
 
   // Helper to get tile at position
-  const getTileAt = (row: number, col: number): string | null => {
+  const getTileAt = (
+    row: number,
+    col: number,
+  ): TileData | PlacedTile | null => {
     const placedTile = tiles.find((t) => t.row === row && t.col === col);
-    if (placedTile) return placedTile.letter;
+    if (placedTile) return placedTile;
     return board[row]?.[col] ?? null;
   };
 
@@ -132,8 +138,9 @@ export function extractWordsFromMove(
     startCol: number,
     dRow: number,
     dCol: number,
-  ): { word: string; tiles: PlacedTile[] } | null => {
+  ): { word: string; tiles: PlacedTile[]; isNewTile: boolean[] } | null => {
     const wordTiles: PlacedTile[] = [];
+    const isNewTile: boolean[] = [];
     let row = startRow;
     let col = startCol;
 
@@ -150,29 +157,31 @@ export function extractWordsFromMove(
     // Build word going forward
     let word = "";
     while (row >= 0 && col >= 0 && row < 15 && col < 15) {
-      const letter = getTileAt(row, col);
-      if (!letter) break;
+      const tileData = getTileAt(row, col);
+      if (!tileData) break;
 
-      word += letter;
-      const tile = tiles.find((t) => t.row === row && t.col === col);
-      if (tile) {
-        wordTiles.push(tile);
-      } else {
-        // Tile was already on board
-        wordTiles.push({
-          id: `board-${row}-${col}`,
-          letter,
-          row,
-          col,
-        });
-      }
+      word += tileData.letter;
+      const isNew = newTilePositions.has(`${row}-${col}`);
+
+      // Convert to PlacedTile format with points
+      const placedTile: PlacedTile = {
+        id: tileData.id || `board-${row}-${col}`,
+        letter: tileData.letter,
+        points: tileData.points || 0,
+        row,
+        col,
+        isBlank: tileData.isBlank,
+      };
+
+      wordTiles.push(placedTile);
+      isNewTile.push(isNew);
 
       row += dRow;
       col += dCol;
     }
 
     if (word.length >= 2) {
-      return { word, tiles: wordTiles };
+      return { word, tiles: wordTiles, isNewTile };
     }
     return null;
   };
@@ -188,6 +197,7 @@ export function extractWordsFromMove(
           tiles: horizontalWord.tiles,
           score: 0, // Will be calculated separately
           isValid: false, // Will be validated
+          isNewTile: horizontalWord.isNewTile,
         });
       }
     }
@@ -202,6 +212,7 @@ export function extractWordsFromMove(
           tiles: verticalWord.tiles,
           score: 0,
           isValid: false,
+          isNewTile: verticalWord.isNewTile,
         });
       }
     }
@@ -213,12 +224,23 @@ export function extractWordsFromMove(
 /**
  * Validate a single word using dictionary API
  */
-export async function validateWord(word: string): Promise<boolean> {
+export async function validateWord(
+  word: string,
+  dictionary: DictionaryType = "ENABLE",
+): Promise<boolean> {
   if (!word || word.length < 2) return false;
   if (word.length === 1) return "AEIOU".includes(word.toUpperCase());
 
+  const upperWord = word.toUpperCase();
+
   // Check common words first (instant)
-  if (COMMON_WORDS.has(word.toUpperCase())) {
+  if (COMMON_WORDS.has(upperWord)) {
+    return true;
+  }
+
+  // Check local dictionary set (fast)
+  const localDict = getLocalDictionary(dictionary);
+  if (localDict.has(upperWord)) {
     return true;
   }
 
@@ -232,8 +254,8 @@ export async function validateWord(word: string): Promise<boolean> {
     return data.length > 0 && data[0].word.toLowerCase() === word.toLowerCase();
   } catch (error) {
     console.error("Dictionary API error:", error);
-    // Fallback to common words
-    return COMMON_WORDS.has(word.toUpperCase());
+    // Fallback to local/common words only
+    return COMMON_WORDS.has(upperWord) || localDict.has(upperWord);
   }
 }
 
@@ -242,7 +264,8 @@ export async function validateWord(word: string): Promise<boolean> {
  */
 export async function validateMove(
   tiles: PlacedTile[],
-  board: (string | null)[][],
+  board: (TileData | null)[][],
+  dictionary: DictionaryType = "ENABLE",
 ): Promise<ValidationResult> {
   const errors: string[] = [];
 
@@ -289,7 +312,7 @@ export async function validateMove(
 
   // Validate each word
   for (const word of words) {
-    word.isValid = await validateWord(word.word);
+    word.isValid = await validateWord(word.word, dictionary);
     if (!word.isValid) {
       errors.push(`"${word.word}" is not a valid word`);
     }
@@ -307,7 +330,7 @@ export async function validateMove(
  */
 export function areTilesConnected(
   tiles: PlacedTile[],
-  board: (string | null)[][],
+  board: (TileData | null)[][],
 ): boolean {
   if (tiles.length === 0) return false;
   if (tiles.length === 1) return true;
@@ -347,7 +370,7 @@ export function areTilesConnected(
  */
 export function isValidPlacement(
   tiles: PlacedTile[],
-  board: (string | null)[][],
+  board: (TileData | null)[][],
   isFirstMove: boolean,
 ): { valid: boolean; error?: string } {
   // First move must use center square

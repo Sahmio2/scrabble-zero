@@ -13,19 +13,12 @@ import {
 } from "@dnd-kit/core";
 import { BoardSquare } from "./BoardSquare";
 import { Tile } from "./Tile";
-import { TileRack } from "./TileRack";
-
-interface PlacedTile {
-  id: string;
-  letter: string;
-  value?: number;
-  row: number;
-  col: number;
-}
+import type { TileData } from "@/lib/gameLogic";
+import type { PlacedTile } from "@/lib/scoring";
 
 interface InteractiveBoardProps {
   boardTiles: PlacedTile[];
-  rackTiles: Array<{ id: string; letter: string; value?: number }>;
+  rackTiles: TileData[];
   onTilePlace: (tileId: string, row: number, col: number) => void;
   onTileRemove: (tileId: string) => void;
   onTileReorder: (oldIndex: number, newIndex: number) => void;
@@ -219,7 +212,11 @@ export function InteractiveBoard({
                   key={`${row}-${col}`}
                   row={row}
                   col={col}
-                  tile={tile}
+                  tile={
+                    tile
+                      ? { id: tile.id, letter: tile.letter, value: tile.points }
+                      : undefined
+                  }
                   bonus={bonus}
                   isDroppable={isCurrentPlayerTurn}
                 />
@@ -234,7 +231,7 @@ export function InteractiveBoard({
           <Tile
             id={activeTile.id}
             letter={activeTile.letter}
-            value={activeTile.value}
+            value={(activeTile as any).points ?? (activeTile as any).value}
             isDraggable={false}
           />
         ) : null}

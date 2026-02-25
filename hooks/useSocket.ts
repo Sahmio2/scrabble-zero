@@ -30,6 +30,28 @@ export interface Challenge {
   challengerId: string;
   challengerName: string;
   word: string;
+  expiresAt?: number;
+}
+
+export interface ChallengePenalty {
+  playerId: string;
+  points: number;
+}
+
+export interface ChallengeResult {
+  roomId?: string;
+  challengerId?: string;
+  challengerName?: string;
+  targetPlayerId?: string;
+  targetPlayerName?: string;
+  word?: string;
+  valid: boolean;
+  resolvedBy?: "response" | "timeout" | "late";
+  penalty?: ChallengePenalty | null;
+
+  // backwards compatible
+  playerId?: string;
+  playerName?: string;
 }
 
 export const useSocket = (roomId?: string) => {
@@ -41,8 +63,16 @@ export const useSocket = (roomId?: string) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
-  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(
+    null,
+  );
+  const [challengeTimeLeft, setChallengeTimeLeft] = useState<number | null>(
+    null,
+  );
+  const [lastChallengeResult, setLastChallengeResult] =
+    useState<ChallengeResult | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const challengeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const socketInstance = io({
@@ -67,28 +97,44 @@ export const useSocket = (roomId?: string) => {
       setPlayers(data.players);
     });
 
-    socketInstance.on("player:joined", (data: { playerId: string; name: string; players: Player[] }) => {
-      setPlayers(data.players);
-    });
+    socketInstance.on(
+      "player:joined",
+      (data: { playerId: string; name: string; players: Player[] }) => {
+        setPlayers(data.players);
+      },
+    );
 
-    socketInstance.on("player:left", (data: { playerId: string; name: string; players: Player[] }) => {
-      setPlayers(data.players);
-    });
+    socketInstance.on(
+      "player:left",
+      (data: { playerId: string; name: string; players: Player[] }) => {
+        setPlayers(data.players);
+      },
+    );
 
     // Game events
-    socketInstance.on("game:started", (data: { players: Player[]; currentTurn: number; turnTimer: TurnTimer }) => {
-      setPlayers(data.players);
-      setCurrentTurn(data.currentTurn);
-      setTurnTimer(data.turnTimer);
-      setGameStarted(true);
-      startTimer(data.turnTimer);
-    });
+    socketInstance.on(
+      "game:started",
+      (data: {
+        players: Player[];
+        currentTurn: number;
+        turnTimer: TurnTimer;
+      }) => {
+        setPlayers(data.players);
+        setCurrentTurn(data.currentTurn);
+        setTurnTimer(data.turnTimer);
+        setGameStarted(true);
+        startTimer(data.turnTimer);
+      },
+    );
 
-    socketInstance.on("turn:changed", (data: { currentTurn: number; turnTimer: TurnTimer }) => {
-      setCurrentTurn(data.currentTurn);
-      setTurnTimer(data.turnTimer);
-      startTimer(data.turnTimer);
-    });
+    socketInstance.on(
+      "turn:changed",
+      (data: { currentTurn: number; turnTimer: TurnTimer }) => {
+        setCurrentTurn(data.currentTurn);
+        setTurnTimer(data.turnTimer);
+        startTimer(data.turnTimer);
+      },
+    );
 
     socketInstance.on("turn:start", (timer: TurnTimer) => {
       setTurnTimer(timer);
@@ -96,39 +142,77 @@ export const useSocket = (roomId?: string) => {
     });
 
     // Move events
-    socketInstance.on("move:made", (data: { playerId: string; playerName: string; move: GameMove }) => {
-      // Handle move broadcast - will be processed by game component
-      console.log("Move made:", data);
-    });
+    socketInstance.on(
+      "move:made",
+      (data: { playerId: string; playerName: string; move: GameMove }) => {
+        // Handle move broadcast - will be processed by game component
+        console.log("Move made:", data);
+      },
+    );
 
     // Chat events
     socketInstance.on("chat:message", (message: ChatMessage) => {
-      setChatMessages(prev => [...prev, message]);
+      setChatMessages((prev) => [...prev, message]);
     });
 
     // Challenge events
     socketInstance.on("challenge:received", (challenge: Challenge) => {
       setActiveChallenge(challenge);
+
+      if (challengeTimerRef.current) {
+        clearInterval(challengeTimerRef.current);
+      }
+
+      if (challenge.expiresAt) {
+        challengeTimerRef.current = setInterval(() => {
+          const remaining = Math.max(
+            0,
+            Math.ceil((challenge.expiresAt! - Date.now()) / 1000),
+          );
+          setChallengeTimeLeft(remaining);
+          if (remaining === 0 && challengeTimerRef.current) {
+            clearInterval(challengeTimerRef.current);
+          }
+        }, 250);
+      } else {
+        setChallengeTimeLeft(null);
+      }
     });
 
-    socketInstance.on("challenge:announced", (data: { challengerName: string; word: string }) => {
-      console.log("Challenge announced:", data);
-    });
+    socketInstance.on(
+      "challenge:announced",
+      (data: { challengerName: string; word: string }) => {
+        console.log("Challenge announced:", data);
+      },
+    );
 
-    socketInstance.on("challenge:result", (data: { playerId: string; playerName: string; valid: boolean }) => {
+    socketInstance.on("challenge:result", (data: ChallengeResult) => {
       console.log("Challenge result:", data);
+      setLastChallengeResult(data);
       setActiveChallenge(null);
+      setChallengeTimeLeft(null);
+      if (challengeTimerRef.current) {
+        clearInterval(challengeTimerRef.current);
+        challengeTimerRef.current = null;
+      }
     });
 
     // Timer warnings
-    socketInstance.on("timer:warning", (data: { playerId: string; playerName: string; timeLeft: number }) => {
-      console.log("Timer warning:", data);
-    });
+    socketInstance.on(
+      "timer:warning",
+      (data: { playerId: string; playerName: string; timeLeft: number }) => {
+        console.log("Timer warning:", data);
+      },
+    );
 
     return () => {
       socketInstance.disconnect();
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+
+      if (challengeTimerRef.current) {
+        clearInterval(challengeTimerRef.current);
       }
     };
   }, []);
@@ -139,7 +223,7 @@ export const useSocket = (roomId?: string) => {
     }
 
     const startTime = new Date(timer.startTime).getTime();
-    
+
     timerRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = Math.max(0, timer.duration - elapsed);
@@ -197,7 +281,11 @@ export const useSocket = (roomId?: string) => {
     }
   };
 
-  const issueChallenge = (roomId: string, targetPlayerId: string, word: string) => {
+  const issueChallenge = (
+    roomId: string,
+    targetPlayerId: string,
+    word: string,
+  ) => {
     if (socket) {
       socket.emit("challenge:issued", { roomId, targetPlayerId, word });
     }
@@ -225,6 +313,8 @@ export const useSocket = (roomId?: string) => {
     chatMessages,
     gameStarted,
     activeChallenge,
+    challengeTimeLeft,
+    lastChallengeResult,
     joinRoom,
     startGame,
     submitMove,

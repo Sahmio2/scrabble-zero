@@ -1,6 +1,10 @@
 import { Server as NetServer } from "http";
 import { NextApiRequest, NextApiResponse } from "next";
 import { Server as ServerIO } from "socket.io";
+import {
+  CHALLENGE_PENALTY_POINTS,
+  CHALLENGE_TIMER_SECONDS,
+} from "@/lib/gameLogic";
 
 export const config = {
   api: {
@@ -29,6 +33,16 @@ const SocketHandler = (
     // Game room management
     const gameRooms = new Map<string, Set<string>>();
     const playerData = new Map<string, { name: string; roomId?: string }>();
+    const activeChallenges = new Map<
+      string,
+      {
+        challengerId: string;
+        targetPlayerId: string;
+        word: string;
+        expiresAt: number;
+        timeout: NodeJS.Timeout;
+      }
+    >();
 
     io.on("connection", (socket) => {
       console.log(`User connected: ${socket.id}`);
@@ -161,11 +175,54 @@ const SocketHandler = (
           const { roomId, targetPlayerId, word } = data;
           const challengerInfo = playerData.get(socket.id);
 
+          // Only allow one active challenge per room
+          const existing = activeChallenges.get(roomId);
+          if (existing) {
+            clearTimeout(existing.timeout);
+            activeChallenges.delete(roomId);
+          }
+
+          const expiresAt = Date.now() + CHALLENGE_TIMER_SECONDS * 1000;
+
+          const timeout = setTimeout(() => {
+            const stillActive = activeChallenges.get(roomId);
+            if (!stillActive) return;
+
+            // Auto-resolve as valid if timer expires (challenge fails)
+            io.to(roomId).emit("challenge:result", {
+              roomId,
+              challengerId: stillActive.challengerId,
+              challengerName:
+                playerData.get(stillActive.challengerId)?.name || "Unknown",
+              targetPlayerId: stillActive.targetPlayerId,
+              targetPlayerName:
+                playerData.get(stillActive.targetPlayerId)?.name || "Unknown",
+              word: stillActive.word,
+              valid: true,
+              resolvedBy: "timeout" as const,
+              penalty: {
+                playerId: stillActive.challengerId,
+                points: CHALLENGE_PENALTY_POINTS,
+              },
+            });
+
+            activeChallenges.delete(roomId);
+          }, CHALLENGE_TIMER_SECONDS * 1000);
+
+          activeChallenges.set(roomId, {
+            challengerId: socket.id,
+            targetPlayerId,
+            word,
+            expiresAt,
+            timeout,
+          });
+
           // Send challenge to target player
           io.to(targetPlayerId).emit("challenge:received", {
             challengerId: socket.id,
             challengerName: challengerInfo?.name || "Unknown",
             word,
+            expiresAt,
           });
 
           // Notify room of challenge
@@ -182,10 +239,41 @@ const SocketHandler = (
           const { roomId, valid } = data;
           const playerInfo = playerData.get(socket.id);
 
+          const challenge = activeChallenges.get(roomId);
+          if (challenge) {
+            clearTimeout(challenge.timeout);
+            activeChallenges.delete(roomId);
+
+            // Failed challenge when word is valid => challenger penalty
+            const penalty = valid
+              ? {
+                  playerId: challenge.challengerId,
+                  points: CHALLENGE_PENALTY_POINTS,
+                }
+              : null;
+
+            io.to(roomId).emit("challenge:result", {
+              roomId,
+              challengerId: challenge.challengerId,
+              challengerName:
+                playerData.get(challenge.challengerId)?.name || "Unknown",
+              targetPlayerId: challenge.targetPlayerId,
+              targetPlayerName:
+                playerData.get(challenge.targetPlayerId)?.name || "Unknown",
+              word: challenge.word,
+              valid,
+              resolvedBy: "response" as const,
+              penalty,
+            });
+            return;
+          }
+
+          // No active challenge (late response) - keep backwards compatible broadcast
           io.to(roomId).emit("challenge:result", {
             playerId: socket.id,
             playerName: playerInfo?.name || "Unknown",
             valid,
+            resolvedBy: "late" as const,
           });
         },
       );

@@ -11,19 +11,25 @@ interface ChallengeSystemProps {
   lastMove?: { word: string; playerId: string };
 }
 
-export function ChallengeSystem({ 
-  roomId, 
-  currentUserId, 
-  players, 
-  currentTurn, 
-  lastMove 
+export function ChallengeSystem({
+  roomId,
+  currentUserId,
+  players,
+  currentTurn,
+  lastMove,
 }: ChallengeSystemProps) {
-  const { activeChallenge, issueChallenge, respondToChallenge } = useSocket(roomId);
+  const {
+    activeChallenge,
+    challengeTimeLeft,
+    issueChallenge,
+    respondToChallenge,
+  } = useSocket(roomId);
   const [showChallengeDialog, setShowChallengeDialog] = useState(false);
   const [challengeWord, setChallengeWord] = useState("");
 
   const canChallenge = lastMove && lastMove.playerId !== currentUserId;
-  const isBeingChallenged = activeChallenge && activeChallenge.challengerId !== currentUserId;
+  const isBeingChallenged =
+    activeChallenge && activeChallenge.challengerId !== currentUserId;
 
   const handleIssueChallenge = () => {
     if (lastMove && canChallenge) {
@@ -54,11 +60,16 @@ export function ChallengeSystem({
       {isBeingChallenged && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-stone-900 mb-4">Word Challenge!</h3>
-            
+            <h3 className="text-xl font-bold text-stone-900 mb-4">
+              Word Challenge!
+            </h3>
+
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
               <p className="text-stone-700">
-                <span className="font-semibold">{activeChallenge.challengerName}</span> has challenged the word:
+                <span className="font-semibold">
+                  {activeChallenge.challengerName}
+                </span>{" "}
+                has challenged the word:
               </p>
               <p className="text-2xl font-bold text-amber-900 mt-2 text-center">
                 "{activeChallenge.word}"
@@ -66,8 +77,16 @@ export function ChallengeSystem({
             </div>
 
             <div className="text-sm text-stone-600 mb-6">
-              If the word is valid, the challenger loses their turn. If invalid, your move will be reversed.
+              If the word is valid, the challenger loses 10 points. If invalid,
+              your move will be reversed.
             </div>
+
+            {typeof challengeTimeLeft === "number" && (
+              <div className="text-sm text-stone-600 mb-6">
+                Time remaining:{" "}
+                <span className="font-semibold">{challengeTimeLeft}s</span>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <button
@@ -91,14 +110,16 @@ export function ChallengeSystem({
       {showChallengeDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-stone-900 mb-4">Issue Challenge</h3>
-            
+            <h3 className="text-xl font-bold text-stone-900 mb-4">
+              Issue Challenge
+            </h3>
+
             <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 mb-6">
               <p className="text-stone-700 mb-2">
                 You are challenging the word played by:
               </p>
               <p className="font-semibold text-stone-900">
-                {players.find(p => p.id === lastMove?.playerId)?.name}
+                {players.find((p) => p.id === lastMove?.playerId)?.name}
               </p>
               <p className="text-2xl font-bold text-stone-900 mt-3 text-center">
                 "{lastMove?.word}"
@@ -107,7 +128,8 @@ export function ChallengeSystem({
 
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-amber-800">
-                ⚠️ If the word is valid, you will lose your next turn. If invalid, the move will be reversed.
+                ⚠️ If the word is valid, you will lose 10 points. If invalid,
+                the move will be reversed.
               </p>
             </div>
 

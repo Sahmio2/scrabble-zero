@@ -14,10 +14,10 @@ import { CSS } from "@dnd-kit/utilities";
 interface DraggableTileProps {
   id: string;
   letter: string;
-  value?: number;
+  points?: number;
 }
 
-function DraggableTile({ id, letter, value }: DraggableTileProps) {
+function DraggableTile({ id, letter, points }: DraggableTileProps) {
   const {
     attributes,
     listeners,
@@ -35,13 +35,13 @@ function DraggableTile({ id, letter, value }: DraggableTileProps) {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Tile id={id} letter={letter} value={value} />
+      <Tile id={id} letter={letter} value={points} />
     </div>
   );
 }
 
 interface TileRackProps {
-  tiles: Array<{ id: string; letter: string; value?: number }>;
+  tiles: Array<{ id: string; letter: string; points?: number }>;
   onTileReorder?: (oldIndex: number, newIndex: number) => void;
   onTileReturn?: (tileId: string) => void;
   className?: string;
@@ -85,7 +85,7 @@ export function TileRack({
               key={tile.id}
               id={tile.id}
               letter={tile.letter}
-              value={tile.value}
+              points={tile.points}
             />
           ))
         )}

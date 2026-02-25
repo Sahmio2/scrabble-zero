@@ -4,8 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSocket } from "@/hooks/useSocket";
 import { ScoreDisplay } from "./ScoreDisplay";
 import {
-  calculateWordScore,
-  calculateTotalMoveScore,
+  calculateTotalScore,
   BINGO_BONUS,
   type PlacedTile,
 } from "@/lib/scoring";
@@ -15,11 +14,14 @@ import {
   type WordScore,
 } from "@/lib/wordValidation";
 
+import type { TileData } from "@/lib/gameLogic";
+import type { DictionaryType } from "@/lib/dictionaries";
+
 interface GameControlsProps {
   roomId: string;
   currentUserId: string;
   placedTiles: PlacedTile[];
-  board: (string | null)[][];
+  board: (TileData | null)[][];
   onPlayMove: (score: number, words: WordScore[]) => void;
   onPassTurn: () => void;
   onSwapTiles: () => void;
@@ -45,6 +47,7 @@ export function GameControls({
   const [totalScore, setTotalScore] = useState(0);
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [dictionary, setDictionary] = useState<DictionaryType>("ENABLE");
 
   // Calculate scores and validate words when tiles change
   useEffect(() => {
@@ -69,7 +72,7 @@ export function GameControls({
       }
 
       // Validate words
-      const result = await validateMove(placedTiles, board);
+      const result = await validateMove(placedTiles, board, dictionary);
 
       if (!result.isValid) {
         setValidationError(result.errors.join("\n"));
@@ -78,19 +81,19 @@ export function GameControls({
         setValidationError(null);
       }
 
-      // Calculate scores for each word
+      // Calculate scores for each word (scores already calculated in validation)
       const scoredWords = result.words.map((word) => ({
         ...word,
-        score: calculateWordScore(word.tiles, board),
+        score: word.score, // Score already calculated in wordValidation
       }));
 
       setWords(scoredWords);
-      setTotalScore(calculateTotalMoveScore(scoredWords));
+      setTotalScore(calculateTotalScore(scoredWords));
       setIsValidating(false);
     };
 
     calculateScores();
-  }, [placedTiles, board, isFirstMove]);
+  }, [placedTiles, board, isFirstMove, dictionary]);
 
   const hasBingo = placedTiles.length === 7;
   const canPlayMove =
@@ -117,6 +120,25 @@ export function GameControls({
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
       <h3 className="text-lg font-bold text-stone-900">Game Controls</h3>
+
+      <div className="flex items-center justify-between gap-3">
+        <label
+          className="text-sm font-medium text-stone-700"
+          htmlFor="dictionary"
+        >
+          Dictionary
+        </label>
+        <select
+          id="dictionary"
+          value={dictionary}
+          onChange={(e) => setDictionary(e.target.value as DictionaryType)}
+          className="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="TWL">TWL</option>
+          <option value="SOWPODS">SOWPODS</option>
+          <option value="ENABLE">ENABLE</option>
+        </select>
+      </div>
 
       {/* Score Display */}
       <ScoreDisplay
@@ -160,7 +182,7 @@ export function GameControls({
           disabled={
             !isCurrentPlayerTurn || placedTiles.length === 0 || !canPlayMove
           }
-          className="bg-green-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-h-[44px]"
+          className="bg-green-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-h-11"
           aria-label="Play move"
         >
           Play Move
@@ -169,7 +191,7 @@ export function GameControls({
         <button
           onClick={onRecallTiles}
           disabled={placedTiles.length === 0}
-          className="bg-amber-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-amber-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 min-h-[44px]"
+          className="bg-amber-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-amber-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 min-h-11"
           aria-label="Recall tiles to rack"
         >
           Recall Tiles
@@ -178,7 +200,7 @@ export function GameControls({
         <button
           onClick={onSwapTiles}
           disabled={!isCurrentPlayerTurn}
-          className="bg-blue-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]"
+          className="bg-blue-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-11"
           aria-label="Swap tiles"
         >
           Swap Tiles
@@ -187,7 +209,7 @@ export function GameControls({
         <button
           onClick={onPassTurn}
           disabled={!isCurrentPlayerTurn}
-          className="bg-stone-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-stone-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2 min-h-[44px]"
+          className="bg-stone-600 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold hover:bg-stone-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2 min-h-11"
           aria-label="Pass turn"
         >
           Pass Turn
