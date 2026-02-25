@@ -20,6 +20,7 @@ import {
   type GameRoom as GameRoomType,
   type Player,
 } from "@/lib/gameLogic";
+import type { WordScore } from "@/lib/wordValidation";
 
 type GameState = "lobby" | "room" | "playing" | "finished";
 
@@ -135,7 +136,23 @@ export default function GamePage() {
     });
   };
 
-  const handlePlayMove = () => {
+  const handlePlayMove = (score: number, words: WordScore[]) => {
+    // Update board with placed tiles
+    const newBoard = [...board];
+    placedTiles.forEach((tile) => {
+      newBoard[tile.row][tile.col] = tile.letter;
+    });
+    setBoard(newBoard);
+
+    // Update player score
+    setPlayers((prev) =>
+      prev.map((player) =>
+        player.id === currentUserId
+          ? { ...player, score: player.score + score }
+          : player,
+      ),
+    );
+
     setPlacedTiles([]);
     // Move to next turn would be handled by socket
   };
@@ -480,12 +497,16 @@ export default function GamePage() {
                   roomId={currentRoom?.code || ""}
                   currentUserId={currentUserId}
                   placedTiles={placedTiles}
+                  board={board}
                   onPlayMove={handlePlayMove}
                   onPassTurn={handlePassTurn}
                   onSwapTiles={handleSwapTiles}
                   onRecallTiles={handleRecallTiles}
-                  canPlayMove={placedTiles.length > 0 && isCurrentPlayerTurn}
                   isCurrentPlayerTurn={isCurrentPlayerTurn}
+                  isFirstMove={
+                    placedTiles.every((tile) => !board[tile.row][tile.col]) &&
+                    placedTiles.some((t) => t.row === 7 && t.col === 7)
+                  }
                 />
               </div>
             </div>

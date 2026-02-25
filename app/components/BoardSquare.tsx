@@ -8,18 +8,23 @@ interface BoardSquareProps {
   row: number;
   col: number;
   tile?: { id: string; letter: string; value?: number };
-  bonus?: "double-word" | "triple-word" | "double-letter" | "triple-letter" | "center";
+  bonus?:
+    | "double-word"
+    | "triple-word"
+    | "double-letter"
+    | "triple-letter"
+    | "center";
   isDroppable?: boolean;
   onTileDrop?: (tileId: string, row: number, col: number) => void;
 }
 
-export function BoardSquare({ 
-  row, 
-  col, 
-  tile, 
-  bonus, 
-  isDroppable = true, 
-  onTileDrop 
+export function BoardSquare({
+  row,
+  col,
+  tile,
+  bonus,
+  isDroppable = true,
+  onTileDrop,
 }: BoardSquareProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: `square-${row}-${col}`,
@@ -28,7 +33,7 @@ export function BoardSquare({
 
   const getBonusClass = () => {
     if (!bonus) return "bg-stone-100 border-stone-300";
-    
+
     switch (bonus) {
       case "double-word":
         return "bg-pink-100 border-pink-400 text-pink-700";
@@ -47,7 +52,7 @@ export function BoardSquare({
 
   const getBonusText = () => {
     if (!bonus) return "";
-    
+
     switch (bonus) {
       case "double-word":
         return "DW";
@@ -83,11 +88,9 @@ export function BoardSquare({
           isDraggable={true}
         />
       ) : (
-        <span className="text-xs font-semibold">
-          {getBonusText()}
-        </span>
+        <span className="text-xs font-semibold">{getBonusText()}</span>
       )}
-      
+
       {isOver && isDroppable && (
         <div className="absolute inset-0 bg-green-200 bg-opacity-50 rounded pointer-events-none" />
       )}
