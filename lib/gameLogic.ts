@@ -160,7 +160,7 @@ export interface TileData {
 export interface GameRoom {
   id: string;
   code: string;
-  mode: "classic" | "private" | "guest";
+  mode: "classic" | "private" | "guest" | "practice";
   hostId: string;
   maxPlayers: number;
   status: "waiting" | "active" | "finished";

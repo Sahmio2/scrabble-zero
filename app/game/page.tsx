@@ -213,7 +213,7 @@ export default function GamePage() {
   const isCurrentPlayerTurn = players[currentTurn]?.id === currentUserId;
 
   const handleCreateRoom = (
-    mode: "classic" | "private" | "guest",
+    mode: "classic" | "private" | "guest" | "practice",
     maxPlayers: number,
   ) => {
     const newRoom: GameRoomType = {
@@ -221,7 +221,7 @@ export default function GamePage() {
       code: generateRoomCode(),
       mode,
       hostId: currentUserId,
-      maxPlayers,
+      maxPlayers: mode === "practice" ? 2 : maxPlayers,
       status: "waiting",
       players: [],
       createdAt: new Date(),
@@ -240,7 +240,21 @@ export default function GamePage() {
       tiles: [],
       userId: currentUserId,
     };
-    setPlayers([hostPlayer]);
+
+    if (mode === "practice") {
+      const cpuPlayer: Player = {
+        id: "cpu-player",
+        name: "Computer (CPU)",
+        score: 0,
+        isHost: false,
+        isReady: true,
+        tiles: [],
+        userId: "cpu",
+      };
+      setPlayers([hostPlayer, cpuPlayer]);
+    } else {
+      setPlayers([hostPlayer]);
+    }
   };
 
   const handleJoinRoom = (roomCode: string) => {
