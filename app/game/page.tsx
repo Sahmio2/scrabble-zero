@@ -294,10 +294,17 @@ export default function GamePage() {
     const playerRacks = dealInitialTiles(tileBag, players.length);
 
     // Update players with their tiles
-    const updatedPlayers = players.map((player, index) => ({
-      ...player,
-      tiles: playerRacks[`player-${index}`] || [],
-    }));
+    const updatedPlayers = players.map((player, index) => {
+      let playerRackId = `player-${index}`;
+      // In practice mode, if it's the CPU player, use its specific index or ID
+      if (currentRoom.mode === "practice" && player.id === "cpu-player") {
+        playerRackId = `player-1`;
+      }
+      return {
+        ...player,
+        tiles: playerRacks[playerRackId] || [],
+      };
+    });
 
     setPlayers(updatedPlayers);
     setGameState("playing");

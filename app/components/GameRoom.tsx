@@ -18,7 +18,7 @@ interface GameRoomProps {
   onStartGame: () => void;
   onLeaveRoom: () => void;
   onToggleReady: () => void;
-  gameMode: "classic" | "private" | "guest";
+  gameMode: "classic" | "private" | "guest" | "practice";
 }
 
 export function GameRoom({
