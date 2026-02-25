@@ -32,19 +32,19 @@ export function BoardSquare({
   });
 
   const getBonusClass = () => {
-    if (!bonus) return "bg-[#1e7a46] border-[rgba(0,0,0,0.15)]"; // Board green
+    if (!bonus) return "bg-[#1e7a46] border-[rgba(0,0,0,0.15)]";
 
     switch (bonus) {
       case "double-word":
-        return "bg-[#e8a87c] border-[#d4a04a] text-[#7b3f00] text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
+        return "bg-[#e8a87c] border-[#d4a04a] text-[#7b3f00] text-[5px] sm:text-[6px] lg:text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
       case "triple-word":
-        return "bg-[#c0392b] border-[#a02626] text-white text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
+        return "bg-[#c0392b] border-[#a02626] text-white text-[5px] sm:text-[6px] lg:text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
       case "double-letter":
-        return "bg-[#85c1e9] border-[#1a5276] text-[#1a5276] text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
+        return "bg-[#85c1e9] border-[#1a5276] text-[#1a5276] text-[5px] sm:text-[6px] lg:text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
       case "triple-letter":
-        return "bg-[#2471a3] border-[#1a2e1a] text-white text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
+        return "bg-[#2471a3] border-[#1a2e1a] text-white text-[5px] sm:text-[6px] lg:text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
       case "center":
-        return "bg-[#e8a87c] border-[#d4a04a] text-[#7b3f00]";
+        return "bg-[#e8a87c] border-[#d4a04a] text-[#7b3f00] text-[10px] lg:text-[14px]";
       default:
         return "bg-[#1e7a46] border-[rgba(0,0,0,0.15)]";
     }
@@ -90,7 +90,7 @@ export function BoardSquare({
     <div
       ref={setNodeRef}
       className={`
-        select-none touch-none min-w-8 min-h-8 sm:min-w-10 sm:min-h-10 lg:w-12 lg:h-12 border rounded flex items-center justify-center
+        select-none touch-none w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 border rounded flex items-center justify-center
         transition-all duration-200 relative
         ${getBonusClass()}
         ${isOver && isDroppable ? "scale-105 shadow-lg brightness-110 z-10" : ""}

@@ -44,60 +44,58 @@ export function ChallengeSystem({
 
   return (
     <>
-      {/* Challenge Button */}
+      {/* Challenge Button - Very Compact */}
       {canChallenge && (
-        <div className="mb-4">
+        <div>
           <button
             onClick={() => setShowChallengeDialog(true)}
-            className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-700 transition-colors"
+            className="w-full bg-[#c94c4c] text-white py-1.5 px-3 rounded-lg font-bold hover:bg-[#d32f2f] transition-all shadow-md uppercase text-[10px] tracking-widest"
           >
             🏁 Challenge Word
           </button>
         </div>
       )}
 
-      {/* Active Challenge Dialog */}
+      {/* Active Challenge Dialog - Compact */}
       {isBeingChallenged && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-stone-900 mb-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#145a32] border-4 border-[#0a2e1a] rounded-xl shadow-2xl p-4 max-w-sm w-full">
+            <h3 className="text-sm uppercase tracking-[0.2em] font-bold text-[#e8f5e8] mb-3 text-center">
               Word Challenge!
             </h3>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <p className="text-stone-700">
-                <span className="font-semibold">
-                  {activeChallenge.challengerName}
-                </span>{" "}
-                has challenged the word:
+            <div className="bg-[#0a2e1a] border border-[#0e5a30] rounded-lg p-3 mb-4 text-center">
+              <p className="text-[10px] uppercase font-bold text-[#6da87a] mb-1">
+                {activeChallenge.challengerName} challenges:
               </p>
-              <p className="text-2xl font-bold text-amber-900 mt-2 text-center">
+              <p className="text-xl font-serif font-bold text-[#c0883e]">
                 "{activeChallenge.word}"
               </p>
             </div>
 
-            <div className="text-sm text-stone-600 mb-6">
-              If the word is valid, the challenger loses 10 points. If invalid,
-              your move will be reversed.
-            </div>
-
             {typeof challengeTimeLeft === "number" && (
-              <div className="text-sm text-stone-600 mb-6">
-                Time remaining:{" "}
-                <span className="font-semibold">{challengeTimeLeft}s</span>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <span className="text-[10px] uppercase font-bold text-[#a3c9a8]">
+                  Time Remaining:
+                </span>
+                <span
+                  className={`text-sm font-mono font-bold ${challengeTimeLeft <= 5 ? "text-red-400 animate-pulse" : "text-[#e8f5e8]"}`}
+                >
+                  {challengeTimeLeft}s
+                </span>
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="grid gap-2">
               <button
                 onClick={() => handleRespondToChallenge(true)}
-                className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                className="w-full bg-[#c0883e] text-white py-2 rounded font-bold hover:bg-[#d4a04a] transition-all uppercase text-[10px] tracking-widest shadow-md"
               >
                 ✅ Valid Word
               </button>
               <button
                 onClick={() => handleRespondToChallenge(false)}
-                className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                className="w-full bg-[#c94c4c] text-white py-2 rounded font-bold hover:bg-[#d32f2f] transition-all uppercase text-[10px] tracking-widest shadow-md"
               >
                 ❌ Invalid Word
               </button>
@@ -106,43 +104,38 @@ export function ChallengeSystem({
         </div>
       )}
 
-      {/* Challenge Confirmation Dialog */}
+      {/* Challenge Confirmation Dialog - Compact */}
       {showChallengeDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-stone-900 mb-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#145a32] border-4 border-[#0a2e1a] rounded-xl shadow-2xl p-4 max-w-sm w-full">
+            <h3 className="text-sm uppercase tracking-[0.2em] font-bold text-[#e8f5e8] mb-3 text-center">
               Issue Challenge
             </h3>
 
-            <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 mb-6">
-              <p className="text-stone-700 mb-2">
-                You are challenging the word played by:
+            <div className="bg-[#0a2e1a] border border-[#0e5a30] rounded-lg p-3 mb-4 text-center">
+              <p className="text-[10px] uppercase font-bold text-[#6da87a] mb-1">
+                Challenging:
               </p>
-              <p className="font-semibold text-stone-900">
-                {players.find((p) => p.id === lastMove?.playerId)?.name}
-              </p>
-              <p className="text-2xl font-bold text-stone-900 mt-3 text-center">
+              <p className="text-xl font-serif font-bold text-[#c0883e]">
                 "{lastMove?.word}"
               </p>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-amber-800">
-                ⚠️ If the word is valid, you will lose 10 points. If invalid,
-                the move will be reversed.
-              </p>
-            </div>
+            <p className="text-[10px] text-center text-[#a3c9a8] mb-4 leading-tight">
+              ⚠️ If the word is valid, you lose 10 points. If invalid, the move
+              is reversed.
+            </p>
 
-            <div className="flex gap-3">
+            <div className="grid gap-2">
               <button
                 onClick={handleIssueChallenge}
-                className="flex-1 bg-amber-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-amber-700 transition-colors"
+                className="w-full bg-[#c0883e] text-white py-2 rounded font-bold hover:bg-[#d4a04a] transition-all uppercase text-[10px] tracking-widest shadow-md"
               >
-                Issue Challenge
+                Confirm Challenge
               </button>
               <button
                 onClick={() => setShowChallengeDialog(false)}
-                className="flex-1 bg-stone-200 text-stone-700 py-3 px-4 rounded-lg font-semibold hover:bg-stone-300 transition-colors"
+                className="w-full bg-transparent text-[#a3c9a8] border border-[#2d8a54] py-2 rounded font-bold hover:bg-[#2d8a54]/20 transition-all uppercase text-[10px] tracking-widest"
               >
                 Cancel
               </button>
@@ -151,12 +144,14 @@ export function ChallengeSystem({
         </div>
       )}
 
-      {/* Challenge Result Notification */}
+      {/* Challenge Result Notification - Compact */}
       {activeChallenge && activeChallenge.challengerId !== currentUserId && (
-        <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg z-40">
+        <div className="fixed top-12 right-4 bg-[#c0883e] text-white px-3 py-1.5 rounded-lg shadow-lg z-40 border border-[#d4a04a]">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <span className="font-semibold">Challenge in progress...</span>
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+            <span className="text-[10px] font-bold uppercase tracking-widest">
+              Challenging...
+            </span>
           </div>
         </div>
       )}

@@ -13,64 +13,50 @@ interface ScoreDisplayProps {
 export function ScoreDisplay({
   words,
   totalScore,
-  isValidating = false,
-  bingoBonus = false,
+  isValidating,
+  bingoBonus,
 }: ScoreDisplayProps) {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 space-y-3">
-      <h3 className="text-lg font-bold text-stone-900">Move Preview</h3>
-      
-      {isValidating ? (
-        <div className="flex items-center gap-2 text-stone-600">
-          <div className="w-4 h-4 border-2 border-stone-300 border-t-blue-600 rounded-full animate-spin" />
-          <span className="text-sm">Validating words...</span>
-        </div>
-      ) : words.length === 0 ? (
-        <p className="text-stone-500 text-sm">Place tiles to see preview</p>
-      ) : (
-        <>
-          <div className="space-y-2">
-            {words.map((word, index) => (
+    <div className="bg-[#0a2e1a] border border-[#0e5a30] rounded-lg p-1.5 shadow-inner">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+          {words.length > 0 ? (
+            words.map((word, index) => (
               <div
-                key={`${word.word}-${index}`}
-                className={`flex items-center justify-between p-2 rounded-lg ${
+                key={index}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${
                   word.isValid
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-red-50 border border-red-200"
+                    ? "bg-[#1e7a46] text-[#e8f5e8]"
+                    : "bg-[#7a1e1e] text-[#ffe8e8]"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-stone-900 uppercase">
-                    {word.word}
-                  </span>
-                  {!word.isValid && (
-                    <span className="text-xs text-red-600">Invalid</span>
-                  )}
-                </div>
-                <span className="font-bold text-stone-700">
-                  +{word.score}
-                </span>
+                <span className="font-serif tracking-tight">{word.word}</span>
+                <span className="opacity-60 font-sans">{word.score}</span>
               </div>
-            ))}
-          </div>
-
-          {bingoBonus && (
-            <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 border border-amber-200">
-              <span className="font-semibold text-amber-800">BINGO! (7 tiles)</span>
-              <span className="font-bold text-amber-700">+50</span>
-            </div>
+            ))
+          ) : (
+            <span className="text-[10px] text-[#6da87a] italic ml-1">
+              No words formed
+            </span>
           )}
+        </div>
 
-          <div className="border-t border-stone-200 pt-2 mt-2">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-stone-900">Total</span>
-              <span className="text-xl font-bold text-blue-600">
-                {bingoBonus ? totalScore + 50 : totalScore}
+        <div className="flex flex-col items-end min-w-fit">
+          <div className="flex items-center gap-1">
+            {bingoBonus && (
+              <span className="text-[9px] text-[#c0883e] font-bold animate-bounce">
+                BINGO!
               </span>
-            </div>
+            )}
+            <span className="text-xs font-serif font-bold text-[#e8f5e8]">
+              {isValidating ? "..." : totalScore}
+            </span>
           </div>
-        </>
-      )}
+          <span className="text-[8px] uppercase tracking-tighter font-bold text-[#6da87a] leading-none">
+            Pts
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

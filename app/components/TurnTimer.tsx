@@ -43,43 +43,40 @@ export function TurnTimer({
 
   return (
     <div
-      className={`rounded-lg border-2 p-4 transition-all shadow-md ${getTimerBackground()}`}
+      className={`rounded-lg border p-2 sm:p-3 transition-all shadow-sm ${getTimerBackground()}`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#145a32] border-2 border-[#2d8a54] flex items-center justify-center text-white font-serif font-bold shadow-inner">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-[#145a32] border border-[#2d8a54] flex items-center justify-center text-white font-serif font-bold text-xs shadow-inner">
             {players[currentTurn]?.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 className="text-[10px] uppercase tracking-wider font-bold text-stone-500 mb-0.5">
-              Current Turn
+            <h3 className="text-[8px] uppercase tracking-wider font-bold text-stone-500 leading-none">
+              Turn
             </h3>
-            <p className="text-lg font-serif font-bold text-stone-900 flex items-center gap-2">
+            <p className="text-xs font-serif font-bold text-stone-900 flex items-center gap-1 leading-tight">
               {currentPlayerName}
-              {isCurrentPlayerTurn && (
-                <span className="text-[10px] bg-[#c0883e] text-white px-2 py-0.5 rounded font-sans font-bold uppercase tracking-tighter">
-                  YOUR TURN
-                </span>
-              )}
             </p>
           </div>
         </div>
 
         <div className="text-right">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-stone-500 mb-0.5">
-            Time Remaining
+          <div className="text-[8px] uppercase tracking-wider font-bold text-stone-500 leading-none">
+            Time
           </div>
-          <div className={`text-2xl font-mono tabular-nums ${getTimerColor()}`}>
+          <div
+            className={`text-lg font-mono tabular-nums leading-none ${getTimerColor()}`}
+          >
             ⏱ {formatTime(timeLeft)}
           </div>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="mt-3">
-        <div className="w-full bg-stone-200 rounded-full h-2">
+      {/* Progress bar - Thinner */}
+      <div className="mt-1.5">
+        <div className="w-full bg-stone-200 rounded-full h-1">
           <div
-            className={`h-2 rounded-full transition-all ${
+            className={`h-1 rounded-full transition-all ${
               timeLeft <= 5
                 ? "bg-red-500"
                 : timeLeft <= 10
@@ -90,38 +87,6 @@ export function TurnTimer({
           ></div>
         </div>
       </div>
-
-      {/* Warning message */}
-      {isCurrentPlayerTurn && timeLeft <= 10 && (
-        <div className="mt-3 text-sm">
-          {timeLeft <= 5 ? (
-            <div className="text-red-600 font-semibold">
-              ⚠️ Time running out! You'll automatically pass if you don't move
-              quickly!
-            </div>
-          ) : (
-            <div className="text-amber-600">
-              ⏰ Hurry up! Less than 10 seconds remaining.
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Pass button for current player */}
-      {isCurrentPlayerTurn && (
-        <div className="mt-4">
-          <button
-            className="w-full bg-stone-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-stone-700 transition-colors"
-            onClick={() => {
-              // Handle pass turn
-              const nextPlayerIndex = (currentTurn + 1) % players.length;
-              // This will be handled by the parent component
-            }}
-          >
-            Pass Turn
-          </button>
-        </div>
-      )}
     </div>
   );
 }
