@@ -32,40 +32,40 @@ export function BoardSquare({
   });
 
   const getBonusClass = () => {
-    if (!bonus) return "bg-[#1e7a46] border-[rgba(0,0,0,0.15)]";
+    if (!bonus) return "bg-[#1e5a32]";
 
     switch (bonus) {
       case "double-word":
-        return "bg-[#e8a87c] border-[#d4a04a] text-[#7b3f00] text-[5px] sm:text-[6px] lg:text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
+        return "bg-[#f09c85] text-[#111]";
       case "triple-word":
-        return "bg-[#c0392b] border-[#a02626] text-white text-[5px] sm:text-[6px] lg:text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
+        return "bg-[#d3443a] text-white";
       case "double-letter":
-        return "bg-[#85c1e9] border-[#1a5276] text-[#1a5276] text-[5px] sm:text-[6px] lg:text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
+        return "bg-[#96c4d8] text-[#111]";
       case "triple-letter":
-        return "bg-[#2471a3] border-[#1a2e1a] text-white text-[5px] sm:text-[6px] lg:text-[7px] leading-[1.1] font-bold text-center p-0.5 uppercase";
+        return "bg-[#3f65b8] text-white";
       case "center":
-        return "bg-[#e8a87c] border-[#d4a04a] text-[#7b3f00] text-[10px] lg:text-[14px]";
+        return "bg-[#d9945b] text-[#111]";
       default:
-        return "bg-[#1e7a46] border-[rgba(0,0,0,0.15)]";
+        return "bg-[#1e5a32]";
     }
   };
 
   const getBonusText = () => {
-    if (!bonus) return "";
+    if (!bonus) return null;
 
     switch (bonus) {
       case "double-word":
-        return "DOUBLE WORD SCORE";
+        return <>DOUBLE<br />WORD<br />SCORE</>;
       case "triple-word":
-        return "TRIPLE WORD SCORE";
+        return <>TRIPLE<br />WORD<br />SCORE</>;
       case "double-letter":
-        return "DOUBLE LETTER SCORE";
+        return <>DOUBLE<br />LETTER<br />SCORE</>;
       case "triple-letter":
-        return "TRIPLE LETTER SCORE";
+        return <>TRIPLE<br />LETTER<br />SCORE</>;
       case "center":
-        return "★";
+        return <span className="text-xl sm:text-2xl pt-1">★</span>;
       default:
-        return "";
+        return null;
     }
   };
 
@@ -90,11 +90,10 @@ export function BoardSquare({
     <div
       ref={setNodeRef}
       className={`
-        select-none touch-none w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 border rounded flex items-center justify-center
+        select-none touch-none w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 flex items-center justify-center
         transition-all duration-200 relative
         ${getBonusClass()}
         ${isOver && isDroppable ? "scale-105 shadow-lg brightness-110 z-10" : ""}
-        ${tile ? "border-amber-600 bg-amber-50 shadow-sm" : ""}
       `}
       aria-label={
         tile
@@ -112,7 +111,7 @@ export function BoardSquare({
           isDraggable={true}
         />
       ) : (
-        <span className="text-[10px] sm:text-xs font-semibold">
+        <span className="text-[4px] sm:text-[5px] lg:text-[6px] font-black text-center leading-[1] uppercase tracking-tighter">
           {getBonusText()}
         </span>
       )}

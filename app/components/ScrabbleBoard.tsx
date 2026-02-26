@@ -270,12 +270,12 @@ const TILE_LABELS: Record<TileType, string> = {
 };
 
 const TILE_STYLES: Record<TileType, string> = {
-  TW: "bg-rose-500 text-white",
-  DW: "bg-rose-200 text-rose-900",
-  TL: "bg-sky-500 text-white",
-  DL: "bg-sky-200 text-sky-900",
-  CENTER: "bg-amber-300 text-amber-900 border-2 border-amber-500",
-  NORMAL: "bg-stone-100 text-stone-900",
+  TW: "bg-[#d3443a] text-white",
+  DW: "bg-[#f09c85] text-[#111]",
+  TL: "bg-[#3f65b8] text-white",
+  DL: "bg-[#96c4d8] text-[#111]",
+  CENTER: "bg-[#d9945b] text-[#111]",
+  NORMAL: "bg-[#1e5a32]",
 };
 
 const TILE_DESCRIPTION: Record<TileType, string> = {

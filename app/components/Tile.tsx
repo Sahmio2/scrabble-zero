@@ -35,15 +35,15 @@ export function Tile({
       ref={setNodeRef}
       style={style}
       className={`
-        w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-xs
-        bg-linear-to-br from-[#f7f0d8] to-[#e8dfc4]
-        shadow-[1px_1px_2px_rgba(0,0,0,0.35),inset_0_0.5px_0_rgba(255,255,255,0.7)]
-        border border-[#c4b896]
+        w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-[2px]
+        bg-[#fafafa]
+        shadow-[0_2px_4px_rgba(0,0,0,0.2)]
+        border border-[#cccccc]
         flex items-center justify-center
         transition-all duration-200 cursor-move
         select-none touch-none relative
         ${isDragging ? "scale-105 rotate-2 z-50 shadow-xl opacity-90" : ""}
-        ${!isDraggable ? "cursor-default opacity-100 shadow-sm" : "hover:brightness-105 hover:scale-105"}
+        ${!isDraggable ? "cursor-default opacity-100 shadow-sm" : "hover:brightness-95"}
         ${className}
       `}
       {...listeners}
@@ -53,11 +53,11 @@ export function Tile({
       aria-grabbed={isDragging}
       tabIndex={isDraggable ? 0 : -1}
     >
-      <span className="text-sm sm:text-base lg:text-lg font-serif font-bold text-[#1a1a1a] leading-none select-none">
+      <span className="text-sm sm:text-base lg:text-lg font-serif font-black text-[#111] leading-none select-none uppercase">
         {letter}
       </span>
       {value !== undefined && (
-        <span className="absolute bottom-0.5 right-px text-[7px] lg:text-[8px] font-sans font-bold text-[#4a4a4a] leading-none select-none">
+        <span className="absolute bottom-0.5 right-0.5 text-[5px] sm:text-[6px] lg:text-[7px] font-sans font-bold text-[#111] leading-none select-none">
           {value}
         </span>
       )}

@@ -103,10 +103,10 @@ export function InteractiveBoard({
   };
 
   return (
-    <div className="bg-[#0e3d22] p-2 sm:p-4 lg:p-6 rounded-xl shadow-2xl overflow-x-auto min-h-screen">
-      <div className="max-w-4xl mx-auto">
+    <div className="bg-[#1a4628] p-2 sm:p-4 lg:p-6 rounded-xl shadow-2xl overflow-x-auto min-h-[50vh] flex items-center justify-center w-full">
+      <div className="max-w-4xl w-full mx-auto flex justify-center">
         <div
-          className="grid gap-0.5 sm:gap-1 mx-auto bg-[#0e5a30] p-1 sm:p-2 rounded shadow-inner border-4 border-[#0a2e1a]"
+          className="grid gap-[3px] bg-[#14361d] p-1.5 sm:p-2 rounded-lg shadow-2xl border-[6px] border-[#0e2a15]"
           style={{
             gridTemplateColumns: "repeat(15, minmax(0, 1fr))",
             width: "fit-content",
