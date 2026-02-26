@@ -89,6 +89,7 @@ export default function GamePage() {
 
   const [placedTiles, setPlacedTiles] = useState<PlacedTile[]>([]);
   const [rackTiles, setRackTiles] = useState<TileData[]>([]);
+  const [tileBag, setTileBag] = useState<TileData[]>([]);
 
   const {
     socket,
@@ -120,15 +121,23 @@ export default function GamePage() {
     if (currentRoom?.mode === "practice" && localGameStarted) {
       if (localTimerRef.current) clearInterval(localTimerRef.current);
 
-      localTimerRef.current = setInterval(() => {
-        setLocalTimeLeft((prev) => {
-          if (prev <= 0) {
-            handlePassTurn();
-            return 120;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      if (localCurrentTurn !== 0) {
+        // CPU Turn
+        const cpuTimer = setTimeout(() => {
+          handlePassTurn();
+        }, 3000);
+        return () => clearTimeout(cpuTimer);
+      } else {
+        localTimerRef.current = setInterval(() => {
+          setLocalTimeLeft((prev) => {
+            if (prev <= 0) {
+              handlePassTurn();
+              return 120;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
     }
     return () => {
       if (localTimerRef.current) clearInterval(localTimerRef.current);
@@ -260,10 +269,19 @@ export default function GamePage() {
       };
     });
     setBoard(newBoard);
+    
+    // Draw new tiles for rack
+    const neededTiles = 7 - rackTiles.length;
+    const newTiles = [...tileBag].slice(0, neededTiles);
+    setTileBag((prev) => prev.slice(neededTiles));
+    
+    const updatedRack = [...rackTiles, ...newTiles];
+    setRackTiles(updatedRack);
+
     setPlayers((prev) =>
       prev.map((player) =>
         player.id === currentUserId
-          ? { ...player, score: player.score + score }
+          ? { ...player, score: player.score + score, tiles: updatedRack }
           : player,
       ),
     );
@@ -372,8 +390,8 @@ export default function GamePage() {
 
   const handleStartGame = () => {
     if (!currentRoom) return;
-    const tileBag = initializeTileBag();
-    const playerRacks = dealInitialTiles(tileBag, players.length);
+    const newTileBag = initializeTileBag();
+    const playerRacks = dealInitialTiles(newTileBag, players.length);
     const updatedPlayers = players.map((player, index) => {
       let playerRackId = `player-${index}`;
       if (currentRoom.mode === "practice" && player.id === "cpu-player") {
@@ -382,6 +400,7 @@ export default function GamePage() {
       return { ...player, tiles: playerRacks[playerRackId] || [] };
     });
     setPlayers(updatedPlayers);
+    setTileBag(newTileBag);
     setGameState("playing");
     setRackTiles(playerRacks[`player-0`] || []);
     if (socket && currentRoom.code) {
@@ -464,61 +483,26 @@ export default function GamePage() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="h-screen bg-[#0e3d22] game-container overflow-hidden flex flex-col">
-          <div className="bg-[#0a2e1a] border-b border-[#0e5a30] py-1 px-4 shadow-lg z-30">
-            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1">
-                {players.map((player, index) => (
-                  <div
-                    key={player.id}
-                    className={`player-badge flex items-center gap-2 px-2.5 py-1 rounded-md transition-all ${
-                      index === currentTurn
-                        ? "bg-[#c0883e] text-white ring-1 ring-[#d4a04a] shadow-md"
-                        : "bg-[#1a5c2a] text-[#a3c9a8] opacity-70"
-                    }`}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-[#145a32] border border-[#2d8a54] flex items-center justify-center text-[9px] font-serif font-bold shadow-inner">
-                      {player.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[7px] font-bold uppercase tracking-tighter leading-none mb-0.5">
-                        {player.id === currentUserId ? "You" : player.name}
-                      </span>
-                      <span
-                        className={`player-badge__score px-1.5 py-0 rounded-xs text-[9px] font-serif font-bold ${
-                          index === currentTurn ? "bg-[#a06e2c]" : "bg-[#145a32]"
-                        }`}
-                      >
-                        {player.score}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-[#6da87a] text-[9px] font-bold uppercase tracking-widest hidden md:block">
-                  Room:{" "}
-                  <span className="text-[#e8f5e8] font-mono">
-                    {currentRoom?.code}
-                  </span>
-                </div>
-                <button
-                  onClick={handleLeaveRoom}
-                  className="bg-[#c94c4c] text-white px-2 py-1 rounded font-bold hover:bg-[#d32f2f] transition-all shadow-sm uppercase text-[8px] tracking-widest"
-                >
-                  Quit
-                </button>
-              </div>
-            </div>
-          </div>
-
+        <div className="h-screen bg-[#0e3d22] overflow-hidden flex flex-col fixed inset-0">
           <main className="flex-1 overflow-hidden">
-            <div className="h-full max-w-7xl mx-auto grid lg:grid-cols-[1fr_280px] gap-0">
-              <div className="flex flex-col h-full bg-[#0e3d22] overflow-hidden">
-                <div className="flex-1 flex items-center justify-center p-1 overflow-hidden">
-                  <div className="scale-[0.8] sm:scale-[0.85] lg:scale-[0.9] transition-transform origin-center">
+            <div className="h-full w-full mx-auto grid lg:grid-cols-[1fr_320px] gap-0">
+              <div className="flex flex-col h-full bg-[#0e3d22] overflow-hidden relative">
+                
+                {/* Fixed Quit Button overlapping top left area */}
+                <div className="absolute top-4 left-4 z-50">
+                  <button
+                    onClick={handleLeaveRoom}
+                    className="bg-[#c94c4c] text-white px-3 py-1.5 rounded-lg font-bold hover:bg-[#d32f2f] transition-all shadow-md uppercase text-[10px] tracking-widest"
+                  >
+                    Quit Game
+                  </button>
+                </div>
+                
+                <div className="flex-1 flex items-center justify-center p-2 overflow-hidden max-h-[calc(100vh-100px)]">
+                  <div className="scale-[0.75] sm:scale-[0.85] lg:scale-[0.95] transition-transform origin-center">
                     <InteractiveBoard
                       boardTiles={placedTiles}
+                      savedBoard={board}
                       isCurrentPlayerTurn={isCurrentPlayerTurn}
                     />
                   </div>
@@ -549,9 +533,40 @@ export default function GamePage() {
               </div>
 
               <div className="hidden lg:flex flex-col h-full bg-[#0a2e1a] border-l border-[#0e5a30] overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-2 space-y-3 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                  
+                  {/* Player Scores Stacked */}
+                  <div className="flex flex-col gap-2">
+                    {players.slice(0, 4).map((player, index) => (
+                      <div
+                        key={player.id}
+                        className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                          index === currentTurn
+                            ? "bg-[#c0883e] text-white ring-2 ring-[#d4a04a] shadow-lg transform scale-[1.02]"
+                            : "bg-[#145a32] text-[#a3c9a8] border border-[#1e7a46] opacity-80"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-serif font-bold shadow-inner ${
+                            index === currentTurn ? "bg-[#a06e2c] text-white" : "bg-[#0a2e1a] text-[#a3c9a8]"
+                          }`}>
+                            {player.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-bold tracking-tight text-sm">
+                            {player.id === currentUserId ? "You" : player.name}
+                          </span>
+                        </div>
+                        <span className={`text-lg font-serif font-bold ${
+                          index === currentTurn ? "text-white" : "text-[#d4a04a]"
+                        }`}>
+                          {player.score}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
                   {currentRoom && (
-                    <div className="scale-90 origin-top">
+                    <div className="scale-95 origin-top">
                       <TurnTimer
                         roomId={currentRoom.code}
                         currentPlayerId={currentUserId}

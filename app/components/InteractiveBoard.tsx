@@ -1,11 +1,11 @@
-"use client";
-
 import React from "react";
 import { BoardSquare } from "./BoardSquare";
 import type { PlacedTile } from "@/lib/scoring";
+import type { TileData } from "@/lib/gameLogic";
 
 interface InteractiveBoardProps {
   boardTiles: PlacedTile[];
+  savedBoard?: (TileData | null)[][];
   isCurrentPlayerTurn?: boolean;
 }
 
@@ -96,10 +96,16 @@ const bonusSquares: Record<
 
 export function InteractiveBoard({
   boardTiles,
+  savedBoard,
   isCurrentPlayerTurn = true,
 }: InteractiveBoardProps) {
   const getTileAtPosition = (row: number, col: number) => {
-    return boardTiles.find((tile) => tile.row === row && tile.col === col);
+    const placed = boardTiles.find((tile) => tile.row === row && tile.col === col);
+    if (placed) return placed;
+    if (savedBoard && savedBoard[row] && savedBoard[row][col]) {
+      return savedBoard[row][col];
+    }
+    return null;
   };
 
   return (
@@ -135,7 +141,7 @@ export function InteractiveBoard({
                       : undefined
                   }
                   bonus={bonus}
-                  isDroppable={isCurrentPlayerTurn}
+                  isDroppable={isCurrentPlayerTurn && !tile}
                 />
               );
             }),
