@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String       @id @default(cuid())
+  name            String?
+  email           String       @unique
+  emailVerified   DateTime?
+  image           String?
+  password        String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  games           GamePlayer[]
+  friendships     Friendship[] @relation("UserFriendships")
+  friends         Friendship[] @relation("UserFriends")
+  sentInvites     GameInvite[] @relation("SenderInvites")
+  receivedInvites GameInvite[] @relation("ReceiverInvites")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Game {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  mode        String
+  maxPlayers  Int      @default(4)
+  status      String   @default("waiting")
+  currentTurn Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  players GamePlayer[]
+  moves   GameMove[]
+  invites GameInvite[]
+}
+
+model GamePlayer {
+  id     String @id @default(cuid())
+  gameId String
+  userId String
+  score  Int    @default(0)
+  tiles  String
+  order  Int
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+}
+
+model GameMove {
+  id        String   @id @default(cuid())
+  gameId    String
+  userId    String
+  move      String
+  score     Int
+  timestamp DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
+
+model GameInvite {
+  id         String   @id @default(cuid())
+  gameId     String
+  senderId   String
+  receiverId String
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+
+  game     Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  sender   User @relation("SenderInvites", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceiverInvites", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+
+  user   User @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("UserFriends", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+}
+
+model Move {
+  id        String   @id @default(cuid())
+  gameId    String
+  playerId  String
+  word      String
+  score     Int
+  createdAt DateTime @default(now())
+}
+
+model Leaderboard {
+  id       String   @id @default(cuid())
+  userId   String
+  score    Int
+  gamesWon Int
+  updatedAt DateTime @updatedAt
+}

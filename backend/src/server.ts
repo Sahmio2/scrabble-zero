@@ -1,0 +1,22 @@
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+
+const app = express();
+const httpServer = createServer(app);
+
+const io = new Server(httpServer, {
+  cors: { origin: "*" }
+});
+
+io.on("connection", (socket) => {
+  console.log("player connected", socket.id);
+
+  socket.on("joinGame", (gameId) => {
+    socket.join(gameId);
+  });
+});
+
+httpServer.listen(4000, () => {
+  console.log("server running on port 4000");
+});

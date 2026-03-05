@@ -1,0 +1,46 @@
+# Dependencies
+**/node_modules
+/.pnp
+.pnp.*
+
+# Next.js
+.next/
+out/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma
+/backend/src/generated/prisma
+/frontend/lib/generated/prisma
+dev.db
+
+# Misc
+.vercel
+temp_InteractiveBoard.tsx.bak
+next_log.txt
+dev.log
+error_log.txt
+server_log.txt
+debug_server.log
