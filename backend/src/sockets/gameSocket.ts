@@ -6,6 +6,13 @@ import { drawTiles } from "../engine/drawTiles";
 import { prisma } from "../lib/prisma";
 
 export function registerGameSockets(io: Server) {
+  io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    // Simple verification for now, or just log it
+    console.log("Socket connecting with token:", token ? "exists" : "none");
+    next();
+  });
+
   io.on("connection", (socket) => {
     
     // Player joins the room and server authoritative state is created
@@ -189,6 +196,16 @@ export function registerGameSockets(io: Server) {
          }
          io.to(roomId).emit("game:finished", { scores: room.scores });
       }
+    });
+
+    socket.on("chat:message", (data: { roomId: string; playerId: string; message: string }) => {
+      const { roomId, playerId, message } = data;
+      io.to(roomId).emit("chat:message", {
+        playerId,
+        playerName: playerId.slice(0, 8), // Placeholder or fetch from DB
+        message,
+        timestamp: new Date()
+      });
     });
   });
 }

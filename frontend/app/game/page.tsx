@@ -118,7 +118,7 @@ export default function GamePage() {
   const currentTurn = isPractice ? localCurrentTurn : serverCurrentTurn;
   const timeLeft = isPractice ? localTimeLeft : serverTimeLeft;
 
-  // Use authoritative board if available, else local
+  // Use authoritative values from socket if connected
   const displayBoard = (isPractice ? board : socketBoard) || board;
   
   // Use authoritative rack if available, else local
@@ -126,7 +126,6 @@ export default function GamePage() {
     ? rackTiles 
     : (racks[currentUserId] || []).map((letter: string, i: number) => ({ id: `tile-${i}`, letter, points: 1, isBlank: false }));
   
-  // Players array needs to be either the local one or the authoritative one synced via socket
   const displayPlayers = isPractice ? players : socketPlayers.length > 0 ? socketPlayers : players;
 
   const localTimerRef = useRef<NodeJS.Timeout | null>(null);

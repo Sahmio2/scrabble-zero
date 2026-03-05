@@ -1,22 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
+import { useSocketContext } from "./SocketContext";
+import { useGameStore } from "./useGameStore";
 
 export interface Player {
   id: string;
   name: string;
+  score: number;
 }
 
 export interface TurnTimer {
   playerId: string;
   startTime: Date;
   duration: number;
-}
-
-export interface GameMove {
-  tiles: { letter: string; row: number; col: number }[];
-  score: number;
 }
 
 export interface ChatMessage {
@@ -26,249 +24,32 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export interface Challenge {
-  challengerId: string;
-  challengerName: string;
-  word: string;
-  expiresAt?: number;
-}
-
-export interface ChallengePenalty {
-  playerId: string;
-  points: number;
-}
-
-export interface ChallengeResult {
-  roomId?: string;
-  challengerId?: string;
-  challengerName?: string;
-  targetPlayerId?: string;
-  targetPlayerName?: string;
-  word?: string;
-  valid: boolean;
-  resolvedBy?: "response" | "timeout" | "late";
-  penalty?: ChallengePenalty | null;
-
-  // backwards compatible
-  playerId?: string;
-  playerName?: string;
-}
-
 export const useSocket = (roomId?: string) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [connected, setConnected] = useState(false);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [board, setBoard] = useState<any[][] | null>(null);
-  const [racks, setRacks] = useState<Record<string, any[]>>({});
-  const [scores, setScores] = useState<Record<string, number>>({});
-  const [currentTurn, setCurrentTurn] = useState(0);
-  const [turnTimer, setTurnTimer] = useState<TurnTimer | null>(null);
+  const { socket, connected } = useSocketContext();
+  const store = useGameStore();
+  
+  // Local time left for current turn
   const [timeLeft, setTimeLeft] = useState(0);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(
-    null,
-  );
-  const [challengeTimeLeft, setChallengeTimeLeft] = useState<number | null>(
-    null,
-  );
-  const [lastChallengeResult, setLastChallengeResult] =
-    useState<ChallengeResult | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const challengeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const socketInstance = io("http://localhost:4000");
-
-    socketInstance.on("connect", () => {
-      console.log("Connected to server");
-      setConnected(true);
-      setSocket(socketInstance);
-    });
-
-    socketInstance.on("disconnect", () => {
-      console.log("Disconnected from server");
-      setConnected(false);
-      setSocket(null);
-    });
-
-    // Room state replaces old player joined/left logic
-    // This receives the FULL, authoritative game state
-    socketInstance.on("room:state", (roomState: any) => {
-      // Map server's string array of players back to Player objects if needed
-      // or we can just keep strings. But the UI expects Player[] objects.
-      // So we map them out:
-      const fullPlayers = roomState.players.map((pid: string, idx: number) => ({
-        id: pid,
-        name: `Player ${idx + 1} (${pid.slice(0,4)})`, // basic placeholder name
-        score: roomState.scores[pid] || 0,
-        isHost: idx === 0,
-        isReady: true,
-        tiles: roomState.racks[pid] || [],
-        userId: pid,
-      }));
-
-      setPlayers(fullPlayers);
-      setBoard(roomState.board);
-      setScores(roomState.scores);
-      setRacks(roomState.racks);
-      setCurrentTurn(roomState.turnIndex);
-    });
-
-    socketInstance.on("rack:update", (rack: any[]) => {
-      // Update just the local user's rack if needed, but room:state mostly covers it
-      console.log("rack updated explicitly", rack);
-    });
-
-    // Game events
-    socketInstance.on(
-      "game:started",
-      (data: {
-        players: Player[];
-        currentTurn: number;
-        turnTimer: TurnTimer;
-      }) => {
-        setPlayers(data.players);
-        setCurrentTurn(data.currentTurn);
-        setTurnTimer(data.turnTimer);
-        setGameStarted(true);
-        startTimer(data.turnTimer);
-      },
-    );
-
-    socketInstance.on(
-      "turn:changed",
-      (data: { currentTurn: number; turnTimer: TurnTimer }) => {
-        setCurrentTurn(data.currentTurn);
-        setTurnTimer(data.turnTimer);
-        startTimer(data.turnTimer);
-      },
-    );
-
-    socketInstance.on("turn:start", (timer: TurnTimer) => {
-      setTurnTimer(timer);
-      startTimer(timer);
-    });
-
-    // Move events
-    socketInstance.on(
-      "move:made",
-      (data: { playerId: string; playerName: string; move: GameMove }) => {
-        // Handle move broadcast - will be processed by game component
-        console.log("Move made:", data);
-      },
-    );
-
-    // Chat events
-    socketInstance.on("chat:message", (message: ChatMessage) => {
-      setChatMessages((prev) => [...prev, message]);
-    });
-
-    // Challenge events
-    socketInstance.on("challenge:received", (challenge: Challenge) => {
-      setActiveChallenge(challenge);
-
-      if (challengeTimerRef.current) {
-        clearInterval(challengeTimerRef.current);
-      }
-
-      if (challenge.expiresAt) {
-        challengeTimerRef.current = setInterval(() => {
-          const remaining = Math.max(
-            0,
-            Math.ceil((challenge.expiresAt! - Date.now()) / 1000),
-          );
-          setChallengeTimeLeft(remaining);
-          if (remaining === 0 && challengeTimerRef.current) {
-            clearInterval(challengeTimerRef.current);
-          }
-        }, 250);
-      } else {
-        setChallengeTimeLeft(null);
-      }
-    });
-
-    socketInstance.on(
-      "challenge:announced",
-      (data: { challengerName: string; word: string }) => {
-        console.log("Challenge announced:", data);
-      },
-    );
-
-    socketInstance.on("challenge:result", (data: ChallengeResult) => {
-      console.log("Challenge result:", data);
-      setLastChallengeResult(data);
-      setActiveChallenge(null);
-      setChallengeTimeLeft(null);
-      if (challengeTimerRef.current) {
-        clearInterval(challengeTimerRef.current);
-        challengeTimerRef.current = null;
-      }
-    });
-
-    // Timer warnings
-    socketInstance.on(
-      "timer:warning",
-      (data: { playerId: string; playerName: string; timeLeft: number }) => {
-        console.log("Timer warning:", data);
-      },
-    );
-
+    if (store.gameStarted) {
+      // Basic timer logic (needs server sync for precision, but okay for UI)
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => Math.max(0, prev - 1));
+      }, 1000);
+    }
     return () => {
-      socketInstance.disconnect();
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-
-      if (challengeTimerRef.current) {
-        clearInterval(challengeTimerRef.current);
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
-
-  const startTimer = (timer: TurnTimer) => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-
-    const startTime = new Date(timer.startTime).getTime();
-
-    timerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const remaining = Math.max(0, timer.duration - elapsed);
-      setTimeLeft(remaining);
-
-      // Send warning if under 10 seconds
-      if (remaining === 10 && socket) {
-        socket.emit("timer:warning", {
-          roomId,
-          timeLeft: remaining,
-        });
-      }
-
-      // Auto-pass if time runs out
-      if (remaining === 0 && socket) {
-        clearInterval(timerRef.current!);
-        // Handle auto-pass logic
-        handleAutoPass();
-      }
-    }, 1000);
-  };
-
-  const handleAutoPass = () => {
-    if (socket && roomId) {
-      // Move to next player
-      const nextPlayerIndex = (currentTurn + 1) % players.length;
-      socket.emit("turn:end", {
-        roomId,
-        nextPlayerIndex,
-      });
-    }
-  };
+  }, [store.gameStarted]);
 
   const joinRoom = (name: string, roomId: string) => {
     if (socket) {
-      socket.emit("player:join", { name, roomId });
+      const storedUser = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "{}") : {};
+      const playerName = storedUser.name || name;
+      socket.emit("room:join", { roomId, playerId: playerName });
     }
   };
 
@@ -286,23 +67,8 @@ export const useSocket = (roomId?: string) => {
 
   const sendChatMessage = (roomId: string, message: string) => {
     if (socket) {
-      socket.emit("chat:message", { roomId, message });
-    }
-  };
-
-  const issueChallenge = (
-    roomId: string,
-    targetPlayerId: string,
-    word: string,
-  ) => {
-    if (socket) {
-      socket.emit("challenge:issued", { roomId, targetPlayerId, word });
-    }
-  };
-
-  const respondToChallenge = (roomId: string, valid: boolean) => {
-    if (socket) {
-      socket.emit("challenge:respond", { roomId, valid });
+      const storedUser = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "{}") : {};
+      socket.emit("chat:message", { roomId, playerId: storedUser.id || "Guest", message });
     }
   };
 
@@ -315,24 +81,13 @@ export const useSocket = (roomId?: string) => {
   return {
     socket,
     connected,
-    players,
-    board,
-    racks,
-    scores,
-    currentTurn,
-    turnTimer,
+    ...store,
     timeLeft,
-    chatMessages,
-    gameStarted,
-    activeChallenge,
-    challengeTimeLeft,
-    lastChallengeResult,
     joinRoom,
     startGame,
     submitMove,
     sendChatMessage,
-    issueChallenge,
-    respondToChallenge,
     endTurn,
+    lastChallengeResult: store.lastChallengeResult,
   };
 };
