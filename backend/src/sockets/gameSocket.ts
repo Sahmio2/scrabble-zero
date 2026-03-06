@@ -4,6 +4,7 @@ import { validateMove } from "../engine/validateMove";
 import { calculateScore } from "../engine/scoreMove";
 import { drawTiles } from "../engine/drawTiles";
 import { prisma } from "../lib/prisma";
+import { calculateNewRatings } from "../lib/rating";
 
 export function registerGameSockets(io: Server) {
   io.use((socket, next) => {
@@ -130,7 +131,7 @@ export function registerGameSockets(io: Server) {
       }
 
       // 2. Calculate score and update
-      const score = calculateScore(tiles);
+      const score = calculateScore(room.board, tiles);
       room.scores[playerId] = (room.scores[playerId] || 0) + score;
 
       // Persist move to DB
@@ -162,14 +163,18 @@ export function registerGameSockets(io: Server) {
       }
 
       // Remove used tiles from the player's rack
-      const usedCount = mappedTiles.length;
-      for (let i = 0; i < usedCount; i++) {
-         room.racks[playerId].pop(); // naive removal
+      const playerRack = room.racks[playerId];
+      for (const tile of tiles) {
+        const index = playerRack.findIndex((t: any) => t.letter === tile.letter);
+        if (index > -1) {
+          playerRack.splice(index, 1);
+        }
       }
 
       // 3. Refill Player Rack
+      const usedCount = tiles.length;
       const newTiles = drawTiles(room.tileBag, usedCount);
-      room.racks[playerId].push(...newTiles);
+      playerRack.push(...newTiles);
 
       // Update turn index
       room.turnIndex = (room.turnIndex + 1) % room.players.length;
@@ -193,6 +198,44 @@ export function registerGameSockets(io: Server) {
              where: { id: room.gameId },
              data: { status: "finished" }
            });
+
+           // Elo Rating Updates (Simplified for 2-player games)
+           if (room.players.length === 2) {
+             const [p1Id, p2Id] = room.players;
+             const [u1, u2] = await Promise.all([
+               prisma.user.findUnique({ where: { email: p1Id } }),
+               prisma.user.findUnique({ where: { email: p2Id } }),
+             ]);
+
+             if (u1 && u2) {
+               const { p1New, p2New, p1Change, p2Change } = calculateNewRatings(
+                 (u1 as any).rating || 1200,
+                 (u2 as any).rating || 1200,
+                 room.scores[p1Id],
+                 room.scores[p2Id]
+               );
+
+               await Promise.all([
+                 prisma.user.update({ where: { id: u1.id }, data: { rating: p1New } as any }),
+                 prisma.user.update({ where: { id: u2.id }, data: { rating: p2New } as any }),
+                 prisma.gamePlayer.update({
+                   where: { gameId_userId: { gameId: room.gameId, userId: u1.id } },
+                   data: { rating: (u1 as any).rating } as any // Record starting rating
+                 }),
+                 prisma.gamePlayer.update({
+                   where: { gameId_userId: { gameId: room.gameId, userId: u2.id } },
+                   data: { rating: (u2 as any).rating } as any
+                 })
+               ]);
+
+               io.to(roomId).emit("chat:message", {
+                 playerId: "system",
+                 playerName: "System",
+                 message: `Game finished! Rating changes: ${p1Id} (${p1Change > 0 ? "+" : ""}${p1Change}), ${p2Id} (${p2Change > 0 ? "+" : ""}${p2Change})`,
+                 timestamp: new Date()
+               });
+             }
+           }
          }
          io.to(roomId).emit("game:finished", { scores: room.scores });
       }
@@ -254,10 +297,10 @@ export function registerGameSockets(io: Server) {
       const newRack = [...playerRack];
       
       for (const letter of tiles) {
-        const index = newRack.indexOf(letter);
+        const index = newRack.findIndex((t: any) => t.letter === letter);
         if (index > -1) {
-          newRack.splice(index, 1);
-          room.tileBag.push(letter); // Return to bag
+          const removed = newRack.splice(index, 1)[0];
+          room.tileBag.push(removed); // Return to bag as object
         }
       }
 

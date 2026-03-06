@@ -13,6 +13,7 @@ model User {
   emailVerified   DateTime?
   image           String?
   password        String?
+  rating          Int          @default(1200)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -81,6 +82,7 @@ model GamePlayer {
   userId String
   score  Int    @default(0)
   tiles  String
+  rating Int?
   order  Int
 
   game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)

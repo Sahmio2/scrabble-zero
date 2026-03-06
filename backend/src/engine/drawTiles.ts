@@ -1,4 +1,4 @@
-export function drawTiles(tileBag: string[], count: number) {
+export function drawTiles(tileBag: any[], count: number) {
   const tiles = [];
 
   for (let i = 0; i < count; i++) {
