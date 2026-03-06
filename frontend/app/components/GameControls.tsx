@@ -42,7 +42,7 @@ export function GameControls({
   isCurrentPlayerTurn,
   isFirstMove,
 }: GameControlsProps) {
-  const { submitMove } = useSocket(roomId);
+  const { submitMove, passTurn, exchangeTiles } = useSocket(roomId);
   const [words, setWords] = useState<WordScore[]>([]);
   const [totalScore, setTotalScore] = useState(0);
   const [isValidating, setIsValidating] = useState(false);
@@ -100,18 +100,30 @@ export function GameControls({
 
   const handlePlayMove = () => {
     if (canPlayMove && isCurrentPlayerTurn) {
-      // Just emit tiles to the server. The server will validate and score.
       const tilesPayload = placedTiles.map((tile) => ({
         letter: tile.letter,
         row: tile.row,
         col: tile.col,
       }));
 
-      // NOTE: submitMove in useSocket might need adjusting to accept just tiles
       submitMove(roomId, currentUserId, tilesPayload);
-      
-      // Temporary optimistic update or callback
       onPlayMove(0, []); 
+    }
+  };
+
+  const handlePass = () => {
+    if (isCurrentPlayerTurn) {
+      passTurn(roomId, currentUserId);
+      onPassTurn();
+    }
+  };
+
+  const handleSwap = () => {
+    if (isCurrentPlayerTurn) {
+      // For now, swap all tiles in the player's current rack if no tiles are placed
+      // In a real implementation, you'd select specific tiles.
+      exchangeTiles(roomId, currentUserId, []); 
+      onSwapTiles();
     }
   };
 
@@ -189,7 +201,7 @@ export function GameControls({
         </button>
 
         <button
-          onClick={onSwapTiles}
+          onClick={handleSwap}
           disabled={!isCurrentPlayerTurn}
           className={getButtonClass("outline")}
           aria-label="Swap tiles"
@@ -198,7 +210,7 @@ export function GameControls({
         </button>
 
         <button
-          onClick={onPassTurn}
+          onClick={handlePass}
           disabled={!isCurrentPlayerTurn}
           className={getButtonClass("outline")}
           aria-label="Pass turn"

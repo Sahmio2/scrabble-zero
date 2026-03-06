@@ -78,6 +78,18 @@ export const useSocket = (roomId?: string) => {
     }
   };
 
+  const passTurn = (roomId: string, playerId: string) => {
+    if (socket) {
+      socket.emit("pass:turn", { roomId, playerId });
+    }
+  };
+
+  const exchangeTiles = (roomId: string, playerId: string, tiles: string[]) => {
+    if (socket) {
+      socket.emit("exchange:tiles", { roomId, playerId, tiles });
+    }
+  };
+
   return {
     socket,
     connected,
@@ -87,6 +99,8 @@ export const useSocket = (roomId?: string) => {
     startGame,
     submitMove,
     sendChatMessage,
+    passTurn,
+    exchangeTiles,
     endTurn,
     lastChallengeResult: store.lastChallengeResult,
   };

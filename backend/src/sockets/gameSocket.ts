@@ -207,6 +207,78 @@ export function registerGameSockets(io: Server) {
         timestamp: new Date()
       });
     });
+
+    socket.on("pass:turn", async (data: { roomId: string; playerId: string }) => {
+      const { roomId, playerId } = data;
+      const room = await getRoom(roomId);
+      if (!room) return;
+
+      const currentPlayerId = room.players[room.turnIndex];
+      if (currentPlayerId !== playerId) {
+        socket.emit("move:rejected", { reason: "Not your turn" });
+        return;
+      }
+
+      // Advance turn
+      room.turnIndex = (room.turnIndex + 1) % room.players.length;
+      await saveRoom(roomId, room);
+
+      io.to(roomId).emit("room:state", room);
+      io.to(roomId).emit("chat:message", {
+        playerId: "system",
+        playerName: "System",
+        message: `${playerId} passed their turn.`,
+        timestamp: new Date()
+      });
+    });
+
+    socket.on("exchange:tiles", async (data: { roomId: string; playerId: string; tiles: string[] }) => {
+      const { roomId, playerId, tiles } = data;
+      const room = await getRoom(roomId);
+      if (!room) return;
+
+      const currentPlayerId = room.players[room.turnIndex];
+      if (currentPlayerId !== playerId) {
+        socket.emit("move:rejected", { reason: "Not your turn" });
+        return;
+      }
+
+      // Traditional Scrabble rule: can only exchange if at least 7 tiles in bag
+      if (room.tileBag.length < 7) {
+        socket.emit("move:rejected", { reason: "Not enough tiles in bag to exchange" });
+        return;
+      }
+
+      // Remove tiles from rack
+      const playerRack = room.racks[playerId];
+      const newRack = [...playerRack];
+      
+      for (const letter of tiles) {
+        const index = newRack.indexOf(letter);
+        if (index > -1) {
+          newRack.splice(index, 1);
+          room.tileBag.push(letter); // Return to bag
+        }
+      }
+
+      // Draw new tiles
+      const drawn = drawTiles(room.tileBag, tiles.length);
+      newRack.push(...drawn);
+      room.racks[playerId] = newRack;
+
+      // Advance turn
+      room.turnIndex = (room.turnIndex + 1) % room.players.length;
+      await saveRoom(roomId, room);
+
+      socket.emit("rack:update", room.racks[playerId]);
+      io.to(roomId).emit("room:state", room);
+      io.to(roomId).emit("chat:message", {
+        playerId: "system",
+        playerName: "System",
+        message: `${playerId} exchanged ${tiles.length} tiles.`,
+        timestamp: new Date()
+      });
+    });
   });
 }
 

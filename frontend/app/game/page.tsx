@@ -271,6 +271,17 @@ export default function GamePage() {
     });
   };
 
+  const handleShuffle = () => {
+    setRackTiles((prev) => {
+      const result = [...prev];
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    });
+  };
+
   const handlePlayMove = (score: number, words: WordScore[]) => {
     // In practice mode we can keep doing this
     if (isPractice) {
@@ -541,6 +552,7 @@ export default function GamePage() {
                       <TileRack
                         tiles={currentRack}
                         onTileReorder={handleTileReorder}
+                        onShuffle={handleShuffle}
                         className="min-h-10! p-1!"
                       />
                     </div>
