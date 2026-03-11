@@ -1,13 +1,15 @@
-import { PrismaClient } from './src/generated/client';
-
-const prisma = new PrismaClient();
+import 'dotenv/config';
+import { prisma } from './src/lib/prisma';
 
 async function main() {
-  console.log("Prisma Client instantiated");
-  // Try to connect
-  await prisma.$connect();
-  console.log("Prisma Client connected");
-  await prisma.$disconnect();
+  try {
+    const user = await prisma.user.findFirst();
+    console.log("SUCCESS");
+  } catch(e) {
+    console.error("ERROR:");
+    console.error(e);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
-
-main().catch(console.error);
+main();
