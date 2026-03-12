@@ -9,6 +9,7 @@ interface ChallengeSystemProps {
   players: Array<{ id: string; name: string }>;
   currentTurn: number;
   lastMove?: { word: string; playerId: string };
+  contestable?: boolean;
 }
 
 export function ChallengeSystem({
@@ -17,6 +18,7 @@ export function ChallengeSystem({
   players,
   currentTurn,
   lastMove,
+  contestable = true,
 }: ChallengeSystemProps) {
   const {
     activeChallenge,
@@ -27,9 +29,9 @@ export function ChallengeSystem({
   const [showChallengeDialog, setShowChallengeDialog] = useState(false);
   const [challengeWord, setChallengeWord] = useState("");
 
-  const canChallenge = lastMove && lastMove.playerId !== currentUserId;
+  const canChallenge = contestable && lastMove && lastMove.playerId !== currentUserId;
   const isBeingChallenged =
-    activeChallenge && activeChallenge.challengerId !== currentUserId;
+    contestable && activeChallenge && activeChallenge.challengerId !== currentUserId;
 
   const handleIssueChallenge = () => {
     if (lastMove && canChallenge) {

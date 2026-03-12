@@ -90,6 +90,18 @@ export const useSocket = (roomId?: string) => {
     }
   };
 
+  const issueChallenge = (roomId: string, playerId: string, word: string) => {
+    if (socket) {
+      socket.emit("challenge:issue", { roomId, playerId, word });
+    }
+  };
+
+  const respondToChallenge = (roomId: string, valid: boolean) => {
+    if (socket) {
+      socket.emit("challenge:respond", { roomId, valid });
+    }
+  };
+
   return {
     socket,
     connected,
@@ -102,6 +114,10 @@ export const useSocket = (roomId?: string) => {
     passTurn,
     exchangeTiles,
     endTurn,
+    issueChallenge,
+    respondToChallenge,
+    activeChallenge: (store as any).activeChallenge || null,
+    challengeTimeLeft: (store as any).challengeTimeLeft || null,
     lastChallengeResult: store.lastChallengeResult,
   };
 };

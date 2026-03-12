@@ -172,6 +172,7 @@ export interface GameRoom {
   status: "waiting" | "active" | "finished";
   players: GamePlayer[];
   createdAt: Date;
+  contestable?: boolean;
 }
 
 export interface Player {

@@ -352,6 +352,7 @@ export default function GamePage() {
     mode: "classic" | "private" | "guest" | "practice",
     maxPlayers: number,
     turnDuration: number,
+    contestable: boolean = true
   ) => {
     const newRoom: GameRoomType = {
       id: "new-room",
@@ -455,11 +456,11 @@ export default function GamePage() {
 
   if (gameState === "lobby") {
     return (
-      <div className="min-h-screen bg-[#0e3d22]">
+      <div className="h-screen overflow-hidden bg-[#0e3d22] flex flex-col">
         <Navigation />
-        <main className="py-6 px-4">
-          <div className="mx-auto max-w-5xl">
-            <header className="text-center mb-6">
+        <main className="flex-1 w-full flex items-center justify-center p-4">
+          <div className="w-full max-w-5xl flex flex-col h-full lg:h-[80vh]">
+            <header className="text-center shrink-0 mb-4">
               <h1 className="text-3xl font-serif font-bold text-[#e8f5e8] sm:text-4xl tracking-tight">
                 Scrabble Zero
               </h1>
@@ -467,13 +468,15 @@ export default function GamePage() {
                 Premium Scrabble Experience
               </p>
             </header>
-            <div className="setup-card bg-[#145a32] border-4 border-[#0a2e1a] rounded-xl p-6 shadow-2xl">
-              <GameLobby
-                onCreateRoom={handleCreateRoom}
-                onJoinRoom={handleJoinRoom}
-                availableRooms={mockAvailableRooms}
-                currentUserId={currentUserId}
-              />
+            <div className="flex-1 bg-[#145a32] border-4 border-[#0a2e1a] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+              <div className="flex-1 overflow-hidden p-4 sm:p-6 lg:p-8">
+                <GameLobby
+                  onCreateRoom={handleCreateRoom}
+                  onJoinRoom={handleJoinRoom}
+                  availableRooms={mockAvailableRooms}
+                  currentUserId={currentUserId}
+                />
+              </div>
             </div>
           </div>
         </main>
@@ -628,6 +631,7 @@ export default function GamePage() {
                         currentUserId={currentUserId}
                         players={players}
                         currentTurn={currentTurn}
+                        contestable={currentRoom.contestable}
                       />
                     </div>
                   )}

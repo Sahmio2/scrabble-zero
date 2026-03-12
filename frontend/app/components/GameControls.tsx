@@ -84,11 +84,16 @@ export function GameControls({
       // Calculate scores for each word (scores already calculated in validation)
       const scoredWords = result.words.map((word) => ({
         ...word,
-        score: word.score, // Score already calculated in wordValidation
+        score: word.score,
       }));
 
+      let baseScore = calculateTotalScore(scoredWords);
+      if (placedTiles.length === 7) {
+        baseScore += BINGO_BONUS;
+      }
+
       setWords(scoredWords);
-      setTotalScore(calculateTotalScore(scoredWords));
+      setTotalScore(baseScore);
       setIsValidating(false);
     };
 
@@ -107,7 +112,7 @@ export function GameControls({
       }));
 
       submitMove(roomId, currentUserId, tilesPayload);
-      onPlayMove(0, []); 
+      onPlayMove(totalScore, words); 
     }
   };
 
