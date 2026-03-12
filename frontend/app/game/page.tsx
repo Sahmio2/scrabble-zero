@@ -487,8 +487,8 @@ export default function GamePage() {
   if (gameState === "room") {
     if (!currentRoom) return null;
     return (
-      <div className="min-h-screen bg-[#0e3d22]">
-        <main className="py-6 px-4">
+      <div className="h-screen overflow-hidden bg-[#0e3d22]">
+        <main className="h-full py-6 px-4 overflow-y-auto custom-scrollbar">
           <GameRoom
             roomCode={currentRoom.code}
             players={players}

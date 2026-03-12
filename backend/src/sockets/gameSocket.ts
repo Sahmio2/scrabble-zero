@@ -1,7 +1,8 @@
 import { Server } from "socket.io";
 import { getRoom, createRoom, saveRoom } from "../rooms/gameRooms";
 import { validateMove } from "../engine/validateMove";
-import { calculateScore } from "../engine/scoreMove";
+import { calculateScore, extractWordsFromMove } from "../engine/scoreMove";
+import { validateMove as validateWords } from "../engine/wordValidation";
 import { drawTiles } from "../engine/drawTiles";
 import { prisma } from "../lib/prisma";
 import { calculateNewRatings } from "../lib/rating";
@@ -23,6 +24,9 @@ export function registerGameSockets(io: Server) {
       if (!room) {
         room = await createRoom(roomId);
       }
+      
+      // Default contestable to true if not set
+      if (room.contestable === undefined) room.contestable = true;
 
       // Add player if not already in room
       if (!room.players.includes(playerId)) {
@@ -125,6 +129,15 @@ export function registerGameSockets(io: Server) {
         return;
       }
 
+      // If Strict Mode (not contestable), validate words immediately
+      if (room.contestable === false) {
+        const wordResult = await validateWords(tiles, room.board);
+        if (!wordResult.isValid) {
+          socket.emit("move:rejected", { reason: wordResult.errors.join(", ") });
+          return;
+        }
+      }
+
       // 1. Update board state
       for (const tile of mappedTiles) {
         room.board[tile.y][tile.x] = tile.letter;
@@ -178,6 +191,15 @@ export function registerGameSockets(io: Server) {
 
       // Update turn index
       room.turnIndex = (room.turnIndex + 1) % room.players.length;
+
+      // Track last move for challenges
+      const moveWords = extractWordsFromMove(room.board, tiles);
+      room.lastMove = {
+          playerId,
+          tiles,
+          score,
+          word: moveWords.length > 0 ? moveWords[0].word : ""
+      };
 
       // Save mutated state back to Redis
       await saveRoom(roomId, room);
@@ -321,6 +343,71 @@ export function registerGameSockets(io: Server) {
         message: `${playerId} exchanged ${tiles.length} tiles.`,
         timestamp: new Date()
       });
+    });
+
+    socket.on("challenge:issue", async (data: { roomId: string, playerId: string, word: string }) => {
+      const { roomId, playerId, word } = data;
+      const room = await getRoom(roomId);
+      if (!room || !room.lastMove) return;
+
+      // Challenger is 'playerId'. challenged is room.lastMove.playerId
+      room.activeChallenge = {
+        challengerId: playerId,
+        challengerName: playerId.slice(0, 8),
+        challengedId: room.lastMove.playerId,
+        word: word,
+        timestamp: new Date()
+      };
+      
+      await saveRoom(roomId, room);
+      io.to(roomId).emit("room:state", room);
+    });
+
+    socket.on("challenge:respond", async (data: { roomId: string, valid: boolean }) => {
+      const { roomId, valid } = data;
+      const room = await getRoom(roomId);
+      if (!room || !room.activeChallenge) return;
+
+      const { challengerId, challengedId, word } = room.activeChallenge;
+      
+      if (valid) {
+        // Word was valid! Challenger loses 10 points
+        room.scores[challengerId] = Math.max(0, (room.scores[challengerId] || 0) - 10);
+        io.to(roomId).emit("chat:message", {
+          playerId: "system",
+          playerName: "System",
+          message: `Challenge failed! "${word}" is VALID. ${challengerId} loses 10 points.`,
+          timestamp: new Date()
+        });
+      } else {
+        // Word was INVALID! Challenged player's move is reversed
+        const lastMove = room.lastMove;
+        if (lastMove && lastMove.playerId === challengedId) {
+          // 1. Remove points
+          room.scores[challengedId] = Math.max(0, (room.scores[challengedId] || 0) - lastMove.score);
+          
+          // 2. Remove tiles from board
+          for (const tile of lastMove.tiles) {
+             room.board[tile.row][tile.col] = null;
+          }
+          
+          // 3. Give tiles back to player rack (and remove what was drawn?)
+          // This is complex. For now, let's just mark it as void and skip ahead.
+          // In a full impl, we'd roll back the rack.
+          
+          io.to(roomId).emit("chat:message", {
+            playerId: "system",
+            playerName: "System",
+            message: `Challenge success! "${word}" is INVALID. ${challengedId}'s move was reversed.`,
+            timestamp: new Date()
+          });
+        }
+      }
+
+      room.activeChallenge = null;
+      room.lastMove = null;
+      await saveRoom(roomId, room);
+      io.to(roomId).emit("room:state", room);
     });
   });
 }

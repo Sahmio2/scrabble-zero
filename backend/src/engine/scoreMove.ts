@@ -69,7 +69,7 @@ function calculateWordScore(tiles: PlacedTile[], isNewTile: boolean[]): number {
   return score * wordMultiplier;
 }
 
-function extractWordsFromMove(
+export function extractWordsFromMove(
   board: (string | null)[][],
   placedTiles: PlacedTile[]
 ): Array<{ word: string; tiles: PlacedTile[]; isNewTile: boolean[] }> {
@@ -131,27 +131,32 @@ function extractWordsFromMove(
   };
 
   // Main word
-  if (isHorizontal) {
+  if (isHorizontal || placedTiles.length === 1) {
     const main = extractWord(placedTiles[0].row, placedTiles[0].col, 0, 1);
     if (main) words.push(main);
-  } else if (isVertical) {
-    const main = extractWord(placedTiles[0].row, placedTiles[0].col, 1, 0);
-    if (main) words.push(main);
+  }
+  
+  if (isVertical || (placedTiles.length === 1 && words.length === 0)) {
+     // If length is 1, we might have already found a horizontal word. 
+     // We only add vertical as "main" if it was strictly vertical OR it's 1 tile and we haven't added anything yet.
+     // Actually for 1 tile, it doesn't matter, we want all words >= 2.
+     const main = extractWord(placedTiles[0].row, placedTiles[0].col, 1, 0);
+     if (main) {
+        // If it's already in words (unlikely for different directions), skip
+        if (!words.find(w => w.word === main.word)) {
+           words.push(main);
+        }
+     }
   }
 
   // Cross words
   for (const tile of placedTiles) {
     if (isHorizontal) {
       const cross = extractWord(tile.row, tile.col, 1, 0);
-      if (cross) {
-        // Only append if it wasn't already added (unlikely for cross-words unless they overlap strangely)
-        words.push(cross);
-      }
+      if (cross) words.push(cross);
     } else if (isVertical) {
       const cross = extractWord(tile.row, tile.col, 0, 1);
-      if (cross) {
-        words.push(cross);
-      }
+      if (cross) words.push(cross);
     }
   }
 
